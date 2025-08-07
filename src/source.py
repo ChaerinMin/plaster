@@ -3,6 +3,28 @@ import re
 import json
 from datetime import datetime
 
+class Sensor:
+    """
+    A class representing a sensor that captures data.
+    """
+    def __init__(self, name, source_path):
+        self.name = name
+        self.source_path = source_path
+        self.data = []
+        self.init()
+
+    def init(self):
+        """
+        Initializes the sensor by loading its data from the source path.
+        """
+        sensor_data_path = os.path.join(self.source_path, f"{self.name}.json")
+        # if os.path.exists(sensor_data_path):
+        #     with open(sensor_data_path, 'r') as json_file:
+        #         try:
+        #             self.data = json.load(json_file)
+        #         except Exception as e:
+        #             print(f"Error loading data for sensor {self.name}: {e}")
+
 class Day:
     """
     A class representing a day of data captured by a BRICS rig.
