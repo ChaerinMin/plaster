@@ -1,7 +1,7 @@
 import os
 import re
 import json
-import datetime
+from datetime import datetime
 
 class Day:
     """
