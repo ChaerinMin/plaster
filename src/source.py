@@ -42,9 +42,9 @@ class Sequence:
     A class representing a contiguous sequence of data captured by a sensor.
     """
     def __init__(self):
-        self.sensor_data = []
+        self.sensor_data = dict()
 
-    def insert(self, sensor_metadata):
+    def insert(self, name, sensor_metadata):
         """
         Inserts metadata into the sequence.
         This method should handle the logic of adding metadata to the sequence.
@@ -92,10 +92,12 @@ class Sensor:
             self.metadata.append(sensor_metadata)
 
         # Next divide them into sequences
+        seq_ctr = 0
         for ctr in range(len(self.metadata)):
             if ctr == 0:
                 sequence = Sequence()
-                sequence.insert(self.metadata[ctr])
+                sequence_name = "sequence" + str(seq_ctr).zfill(6)
+                sequence.insert(sequence_name, self.metadata[ctr])
             else:
                 # Check if the current metadata is contiguous with the previous one
                 prev_metadata = self.metadata[ctr - 1]
@@ -108,7 +110,9 @@ class Sensor:
                 else:
                     self.sequences.append(sequence)
                     sequence = Sequence()
-                    sequence.insert(curr_metadata)
+                    seq_ctr += 1
+                    sequence_name = "sequence" + str(ctr).zfill(6)
+                    sequence.insert(sequence_name, curr_metadata)
 
             self.serialize(self.plaster_path)
 
