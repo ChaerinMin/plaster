@@ -101,7 +101,7 @@ class Source:
                     json_days = []
 
             if set(json_days) == set(dir_days):
-                self.days = [Day(date) for date in json_days]
+                self.days = [Day(date, self.path) for date in json_days]
                 return
             # else, update JSON below
 
