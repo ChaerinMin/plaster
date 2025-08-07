@@ -7,7 +7,8 @@ class Day:
     """
     A class representing a day of data captured by a BRICS rig.
     """
-    def __init__(self, date):
+    def __init__(self, date, source_path):
+        self.source_path = source_path
         self.date = date
         self.sensors = []
         self.init()
@@ -17,7 +18,7 @@ class Day:
         Initializes the day by listing all the sensors that were capturing data on that day.
         """
         sensor_pattern = re.compile(r'^[A-Za-z0-9_\-]+$')
-        sensor_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), self.date)
+        sensor_dir = os.path.join(self.source_path, self.date)
         if not os.path.exists(sensor_dir):
             self.sensors = []
             return
@@ -82,7 +83,7 @@ class Source:
                 return
             # else, update JSON below
 
-        self.days = [Day(date) for date in dir_days]
+        self.days = [Day(date, self.path) for date in dir_days]
         self.serialize()
 
     def serialize(self):
