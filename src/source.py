@@ -74,7 +74,7 @@ class Day:
         sensor_names = [entry for entry in os.listdir(self.path)
                         if os.path.isdir(os.path.join(self.path, entry)) and sensor_pattern.match(entry)]
 
-        if os.path.exists(self.plaster_path):
+        if os.path.exists(self.plaster_path) and not self.force_reserialize:
             with open(self.plaster_path, 'r') as json_file:
                 try:
                     data = json.load(json_file)
