@@ -71,7 +71,7 @@ class Sensor:
         self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.force_reserialize = force_reserialize
         self.sequences = []
-        self.THRESHOLD = 2000  # Threshold in milliseconds for sequence continuity
+        self.THRESHOLD = 2*1e9  # Threshold in nanoseconds for sequence continuity
         self.init()
 
     def init(self):
