@@ -27,6 +27,7 @@ class SensorMetadata:
                 for line in file:
                     line = line.strip()
                     if line:
+                        print(line)
                         match = re.match(r'frame_(\d+)(?:_(\d+))?', line)
                         if match:
                             timestamp = int(match.group(1))
