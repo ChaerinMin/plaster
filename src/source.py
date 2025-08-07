@@ -114,6 +114,8 @@ class Source:
         self.days = [Day(date, self.path, self.force_reserialize) for date in dir_days]
         self.serialize(self.plaster_path)
 
+        print(f"All done.")
+
     def serialize(self, plaster_path):
         """
         Serializes the source data to a JSON format in the top-level directory.
@@ -125,5 +127,4 @@ class Source:
         }, indent=4)
         with open(plaster_path, 'w') as json_file:
             json_file.write(json_obj)
-        print(f"Serialized Source to {plaster_path}")
     
