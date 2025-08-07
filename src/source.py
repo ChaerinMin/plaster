@@ -42,6 +42,7 @@ class Source:
                     day = Day(entry)
                     day.add_source(self)
                     self.days.append(day)
+                    print(f"Found day: {day.get_date()} with source: {self.name}")
 
     def name(self):
         return self.name
