@@ -111,13 +111,20 @@ class Sensor:
                 curr_metadata = self.metadata[ctr]
                 assert len(prev_metadata.timestamps) > 0 and len(curr_metadata.timestamps) > 0, "Metadata timestamps cannot be empty."
 
-                print(f"Checking sequence continuity: {prev_metadata.timestamps[-1]} -> {curr_metadata.timestamps[0]}")
+                # print(f"Checking sequence continuity: {prev_metadata.timestamps[-1]} -> {curr_metadata.timestamps[0]}")
                 if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= self.THRESHOLD:
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
                 else:
                     self.sequences.append(sequence)
                     sequence = Sequence()
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
+            # Add the last sequence if it exists
+            if sequence.sensor_data:
+                self.sequences.append(sequence)
+            # If no sequences were found, print a warning
+            if not self.sequences:
+                print(f"No valid sequences found for sensor {self.name} on date {self.date}")
+                return
 
             self.serialize(self.plaster_path)
 
