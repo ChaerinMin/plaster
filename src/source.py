@@ -21,7 +21,7 @@ class SensorMetadata:
         """
         Initializes the metadata by loading its data from the metadata file.
         """
-        print(f"Initializing SensorMetadata: {self.name} from {self.metadata_file}")
+        # print(f"Initializing SensorMetadata: {self.name} from {self.metadata_file}")
         if os.path.exists(self.metadata_file):
             with open(self.metadata_file, 'r') as file:
                 # Format is a txt file: frame_<TIMESTAMP>[_<FRAMENUM>]. The last bit within [] is optional.
