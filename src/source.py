@@ -7,13 +7,6 @@ class Day:
     """
     def __init__(self, date):
         self.date = date
-        self.sources = []
-
-    def add_source(self, source):
-        self.sources.append(source)
-
-    def get_sources(self):
-        return self.sources
 
     def get_date(self):
         return self.date
