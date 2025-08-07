@@ -118,15 +118,16 @@ class Sensor:
                     self.sequences.append(sequence)
                     sequence = Sequence()
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
-            # Add the last sequence if it exists
-            if sequence.sensor_data:
-                self.sequences.append(sequence)
-            # If no sequences were found, print a warning
-            if not self.sequences:
-                print(f"No valid sequences found for sensor {self.name} on date {self.date}")
-                return
+                    
+        # Add the last sequence if it exists
+        if sequence.sensor_data:
+            self.sequences.append(sequence)
+        # If no sequences were found, print a warning
+        if not self.sequences:
+            print(f"No valid sequences found for sensor {self.name} on date {self.date}")
+            return
 
-            self.serialize(self.plaster_path)
+        self.serialize(self.plaster_path)
 
     def serialize(self, plaster_path):
         """
