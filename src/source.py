@@ -25,6 +25,7 @@ class Source:
     def __init__(self, path):
         self.name = os.path.basename(os.path.normpath(path))
         self.path = path
+        print(f"Initializing Source: {self.name} at {self.path}")
         self.days = []
 
         self.compute()
