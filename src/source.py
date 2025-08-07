@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import datetime
 
 class Day:
     """
@@ -56,6 +57,8 @@ class Source:
             "name": self.name,
             "path": self.path,
             "days": [day.get_date() for day in self.days]
+            ,
+            "plastered_at": datetime.now().isoformat()
         }, indent=4)
         with open(self.plaster_path, 'w') as json_file:
             json_file.write(json_obj)
