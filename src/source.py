@@ -28,12 +28,13 @@ class Sensor:
     """
     A class representing a sensor that captures data.
     """
-    def __init__(self, source_path, date):
+    def __init__(self, source_path, date, sensor_name, force_reserialize=False):
         self.source_path = source_path
         self.date = date
-        self.path = os.path.join(source_path, date)
+        self.name = sensor_name
+        self.path = os.path.join(self.source_path, self.date, self.name)
         self.plaster_path = os.path.join(self.path, 'plaster.json')
-        self.name = os.path.basename(os.path.normpath(self.path))
+        self.force_reserialize = force_reserialize
         self.init()
 
     def init(self):
