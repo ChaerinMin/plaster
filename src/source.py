@@ -27,7 +27,6 @@ class SensorMetadata:
                 for line in file:
                     line = line.strip()
                     if line:
-                        print(line)
                         match = re.match(r'frame_(\d+)(?:_(\d+))?', line)
                         if match:
                             timestamp = int(match.group(1))
@@ -36,10 +35,9 @@ class SensorMetadata:
                             self.frame_nums.append(frame_num)
                         else:
                             print(f"Line '{line}' in {self.metadata_file} does not match expected format.")
+                print(f"Loaded {len(self.timestamps)} timestamps from {self.metadata_file}.")
         else:
             print(f"Metadata file {self.metadata_file} does not exist.")
-            self.timestamps = []
-            self.frame_nums = []
 
 class Sequence:
     """
