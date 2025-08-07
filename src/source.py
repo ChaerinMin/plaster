@@ -101,11 +101,9 @@ class Sensor:
                 self.metadata.append(sensor_metadata)
 
         # Next divide them into sequences
-        seq_ctr = 0
+        sequence = Sequence()
         for ctr in range(len(self.metadata)):
             if ctr == 0:
-                sequence = Sequence()
-                sequence_name = "sequence" + str(seq_ctr).zfill(6)
                 sequence.insert(self.metadata[ctr].name, self.metadata[ctr])
             else:
                 # Check if the current metadata is contiguous with the previous one
@@ -115,12 +113,10 @@ class Sensor:
 
                 print(f"Checking sequence continuity: {prev_metadata.timestamps[-1]} -> {curr_metadata.timestamps[0]}")
                 if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= self.THRESHOLD:
-                    sequence.insert(curr_metadata)
+                    sequence.insert(self.metadata[ctr].name, curr_metadata)
                 else:
                     self.sequences.append(sequence)
                     sequence = Sequence()
-                    seq_ctr += 1
-                    sequence_name = "sequence" + str(ctr).zfill(6)
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
 
             self.serialize(self.plaster_path)
