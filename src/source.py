@@ -23,18 +23,19 @@ class SensorMetadata:
         print(f"Initializing SensorMetadata: {self.name} from {self.metadata_file}")
         if os.path.exists(self.metadata_file):
             with open(self.metadata_file, 'r') as file:
-                # Format is a txt file: frame_<TIMESTAMP>[_<FRAMENUM>]
+                # Format is a txt file: frame_<TIMESTAMP>[_<FRAMENUM>]. The last bit within [] is optional.
                 for line in file:
                     line = line.strip()
                     if line:
                         print(line)
                         match = re.match(r'frame_(\d+)(?:_(\d+))?', line)
-                        print(match)
                         if match:
                             timestamp = int(match.group(1))
                             frame_num = int(match.group(2)) if match.group(2) else 0
                             self.timestamps.append(timestamp)
                             self.frame_nums.append(frame_num)
+                        else:
+                            print(f"Line '{line}' in {self.metadata_file} does not match expected format.")
         else:
             print(f"Metadata file {self.metadata_file} does not exist.")
             self.timestamps = []
