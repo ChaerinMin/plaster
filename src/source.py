@@ -86,6 +86,8 @@ class Source:
         self.days = []
         self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.force_reserialize = force_reserialize
+        if self.force_reserialize:
+            print("Forcing reserialization of the source.")
         self.init()
 
     def init(self):
