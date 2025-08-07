@@ -55,10 +55,8 @@ class Source:
         """
         json_obj    = json.dumps({
             "name": self.name,
-            "path": self.path,
-            "days": [day.get_date() for day in self.days]
-            ,
-            "plastered_at": datetime.now().isoformat()
+            "days": [day.get_date() for day in self.days],
+            "plaster_timestamp": datetime.now().isoformat()
         }, indent=4)
         with open(self.plaster_path, 'w') as json_file:
             json_file.write(json_obj)
