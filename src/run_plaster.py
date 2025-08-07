@@ -11,4 +11,4 @@ if __name__ == "__main__":
 
     # Assuming the directory structure is set up correctly, this will compute the days
     for day in source_instance.days:
-        print(f"Day: {day.get_date()}, Sources: {[src.name() for src in day.get_sources()]}")
+        print(f"Day: {day.get_date()}")
