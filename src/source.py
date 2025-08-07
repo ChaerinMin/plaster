@@ -86,8 +86,8 @@ class Day:
             if set(json_sensors) == set(sensor_names):
                 self.sensors = json_sensors
                 return
-            
-        self.sensors = [Sensor(self.source_path, self.date) for sensor in sensor_names]
+
+        self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize) for sensor in sensor_names]
         self.serialize(self.plaster_path)
 
     def serialize(self, plaster_path):
