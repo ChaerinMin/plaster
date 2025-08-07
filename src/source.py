@@ -30,12 +30,6 @@ class Source:
 
         self.compute()
 
-    def name(self):
-        return self.name
-
-    def path(self):
-        return self.path
-
     def compute(self):
         """
         Computes the days of data captured by this source.
