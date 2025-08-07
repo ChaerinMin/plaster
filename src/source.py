@@ -81,7 +81,8 @@ class Sensor:
         self.metadata_files = sorted(glob(os.path.join(self.path, '*.txt')))
 
         # Check if the number of video files and metadata files match
-        assert len(self.video_files) != len(self.metadata_files)
+        assert len(self.video_files) == len(self.metadata_files), \
+            f"Number of video files ({len(self.video_files)}) does not match number of metadata files ({len(self.metadata_files)}) in {self.path}"
 
         # Load metadata for each sensor
         self.metadata = []
