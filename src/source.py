@@ -14,6 +14,7 @@ class SensorMetadata:
         self.metadata_file = metadata_file
         self.timestamps = []
         self.frame_nums = []
+        self.valid = False
         self.init()
 
     def init(self):
@@ -35,7 +36,12 @@ class SensorMetadata:
                             self.frame_nums.append(frame_num)
                         else:
                             print(f"Line '{line}' in {self.metadata_file} does not match expected format.")
-                print(f"Loaded {len(self.timestamps)} timestamps from {self.metadata_file}.")
+                # If no timestamps were found, mark as invalid
+                if self.timestamps:
+                    self.valid = True
+                else:
+                    self.valid = False
+                    print(f"No valid timestamps found in {self.metadata_file}.")
         else:
             print(f"Metadata file {self.metadata_file} does not exist.")
 
@@ -91,7 +97,8 @@ class Sensor:
         for metadata_file in self.metadata_files:
             metadata_name = os.path.basename(metadata_file).replace('.txt', '')
             sensor_metadata = SensorMetadata(metadata_name, metadata_file)
-            self.metadata.append(sensor_metadata)
+            if sensor_metadata.valid:
+                self.metadata.append(sensor_metadata)
 
         # Next divide them into sequences
         seq_ctr = 0
