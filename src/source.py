@@ -9,6 +9,42 @@ class Day:
     """
     def __init__(self, date):
         self.date = date
+        self.sensors = []
+        self.init()
+
+    def init(self):
+        """
+        Initializes the day by listing all the sensors that were capturing data on that day.
+        """
+        sensor_pattern = re.compile(r'^[A-Za-z0-9_\-]+$')
+        sensor_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), self.date)
+        if not os.path.exists(sensor_dir):
+            self.sensors = []
+            return
+
+        self.sensors = [entry for entry in os.listdir(sensor_dir)
+                        if os.path.isdir(os.path.join(sensor_dir, entry)) and sensor_pattern.match(entry)]
+
+        plaster_path = os.path.join(sensor_dir, 'plaster.json')
+        if os.path.exists(plaster_path):
+            with open(plaster_path, 'r') as json_file:
+                try:
+                    data = json.load(json_file)
+                    json_sensors = data.get('sensors', [])
+                except Exception:
+                    json_sensors = []
+
+            if set(json_sensors) == set(self.sensors):
+                self.sensors = json_sensors
+                return
+
+        json_obj = json.dumps({
+            "date": self.date,
+            "sensors": self.sensors,
+            "plaster_timestamp": datetime.now().isoformat()
+        }, indent=4)
+        with open(plaster_path, 'w') as json_file:
+            json_file.write(json_obj)
 
     def get_date(self):
         return self.date
