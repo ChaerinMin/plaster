@@ -2,27 +2,54 @@ import os
 import re
 import json
 from datetime import datetime
+from glob import glob
+
+class SensorMetadata:
+    """
+    A class representing for a sensor.
+    This is usually recorded in a .txt file alongside the sensor's data files.
+    """
+    def __init__(self, name, metadata_file):
+        self.name = name
+        self.metadata_file = metadata_file
+        self.timestamps = []
+        self.frame_nums = []
+        self.init()
+
+    def init(self):
+        """
+        Initializes the metadata by loading its data from the metadata file.
+        """
+        if os.path.exists(self.metadata_file):
+            with open(self.metadata_file, 'r') as file:
+                # Format is a txt file: frame_<TIMESTAMP>[_<FRAMENUM>]
+                for line in file:
+                    line = line.strip()
+                    if line:
+                        match = re.match(r'frame_(\d+)(?:_(\d+))?', line)
+                        if match:
+                            timestamp = int(match.group(1))
+                            frame_num = int(match.group(2)) if match.group(2) else 0
+                            self.timestamps.append(timestamp)
+                            self.frame_nums.append(frame_num)
+        else:
+            print(f"Metadata file {self.metadata_file} does not exist.")
+            self.timestamps = []
+            self.frame_nums = []
 
 class Sequence:
     """
     A class representing a contiguous sequence of data captured by a sensor.
     """
-    def __init__(self, source_path):
-        self.source_path = source_path
-        self.name = os.path.basename(os.path.normpath(source_path))
-        self.init()
+    def __init__(self):
+        self.sensor_data = []
 
-    def init(self):
+    def insert(self, sensor_metadata):
         """
-        Initializes the sequence by loading its data from the source path.
+        Inserts metadata into the sequence.
+        This method should handle the logic of adding metadata to the sequence.
         """
-        sequence_data_path = os.path.join(self.source_path, f"{self.name}.json")
-        # if os.path.exists(sequence_data_path):
-        #     with open(sequence_data_path, 'r') as json_file:
-        #         try:
-        #             self.data = json.load(json_file)
-        #         except Exception as e:
-        #             print(f"Error loading data for sequence {self.name}: {e}")
+        self.sensor_data.append(sensor_metadata)
 
 class Sensor:
     """
@@ -35,19 +62,68 @@ class Sensor:
         self.path = os.path.join(self.source_path, self.date, self.name)
         self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.force_reserialize = force_reserialize
+        self.sequences = []
+        self.THRESHOLD = 2000  # Threshold in milliseconds for sequence continuity
         self.init()
 
     def init(self):
         """
         Initializes the sensor by loading its data from the source path.
+        We do the following:
+        - Identify sequences and write the sequence info into the plaster.json file
+        - Check for consistency of videos/audio and txt file
+        - Identify sequences from all the video files
         """
-        sensor_data_path = os.path.join(self.source_path, f"{self.name}.json")
-        # if os.path.exists(sensor_data_path):
-        #     with open(sensor_data_path, 'r') as json_file:
-        #         try:
-        #             self.data = json.load(json_file)
-        #         except Exception as e:
-        #             print(f"Error loading data for sensor {self.name}: {e}")
+        # First, get all the files
+        self.video_files = sorted(glob(os.path.join(self.path, '*.mp4')))
+        if len(self.video_files) == 0:
+            self.video_files = sorted(glob(os.path.join(self.path, '*.avi'))) # If it is not yet processed
+        self.metadata_files = sorted(glob(os.path.join(self.path, '*.txt')))
+
+        # Check if the number of video files and metadata files match
+        assert len(self.video_files) != len(self.metadata_files)
+
+        # Load metadata for each sensor
+        self.metadata = []
+        for metadata_file in self.metadata_files:
+            metadata_name = os.path.basename(metadata_file).replace('.txt', '')
+            sensor_metadata = SensorMetadata(metadata_name, metadata_file)
+            self.metadata.append(sensor_metadata)
+
+        # Next divide them into sequences
+        for ctr in range(len(self.metadata)):
+            if ctr == 0:
+                sequence = Sequence()
+                sequence.insert(self.metadata[ctr])
+            else:
+                # Check if the current metadata is contiguous with the previous one
+                prev_metadata = self.metadata[ctr - 1]
+                curr_metadata = self.metadata[ctr]
+                assert len(prev_metadata.timestamps) > 0 and len(curr_metadata.timestamps) > 0, "Metadata timestamps cannot be empty."
+
+                print(f"Checking sequence continuity: {prev_metadata.timestamps[-1]} -> {curr_metadata.timestamps[0]}")
+                if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= self.THRESHOLD:
+                    sequence.insert(curr_metadata)
+                else:
+                    self.sequences.append(sequence)
+                    sequence = Sequence()
+                    sequence.insert(curr_metadata)
+
+            self.serialize(self.plaster_path)
+
+    def serialize(self, plaster_path):
+        """
+        Serializes the sensor's data to a JSON format in the sensor's directory.
+        """
+        sensor_data = {
+            "name": self.name,
+            "date": self.date,
+            "sensor": self.name,
+            "sequences": [seq.sensor_data.name for seq in self.sequences],
+            "plaster_timestamp": datetime.now().isoformat()
+        }
+        with open(plaster_path, 'w') as json_file:
+            json.dump(sensor_data, json_file, indent=4)
 
 class Day:
     """
