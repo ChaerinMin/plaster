@@ -49,7 +49,7 @@ class Sequence:
         Inserts metadata into the sequence.
         This method should handle the logic of adding metadata to the sequence.
         """
-        self.sensor_data.append(sensor_metadata)
+        self.sensor_data[name] = sensor_metadata
 
 class Sensor:
     """
@@ -124,7 +124,10 @@ class Sensor:
             "name": self.name,
             "date": self.date,
             "sensor": self.name,
-            "sequences": [seq.sensor_data.name for seq in self.sequences],
+            "sequences": {
+                f"sequence{str(idx).zfill(6)}": list(seq.sensor_data.keys())
+                for idx, seq in enumerate(self.sequences)
+            },
             "plaster_timestamp": datetime.now().isoformat()
         }
         with open(plaster_path, 'w') as json_file:
