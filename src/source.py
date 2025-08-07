@@ -33,7 +33,6 @@ class Source:
                 full_path = os.path.join(self.path, entry)
                 if os.path.isdir(full_path) and date_pattern.match(entry):
                     day = Day(entry)
-                    day.add_source(self)
                     self.days.append(day)
                     print(f"Found day: {day.get_date()}")
     
