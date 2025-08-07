@@ -29,6 +29,7 @@ class SensorMetadata:
                     if line:
                         print(line)
                         match = re.match(r'frame_(\d+)(?:_(\d+))?', line)
+                        print(match)
                         if match:
                             timestamp = int(match.group(1))
                             frame_num = int(match.group(2)) if match.group(2) else 0
