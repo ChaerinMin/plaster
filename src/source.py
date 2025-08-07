@@ -118,7 +118,7 @@ class Sensor:
                     self.sequences.append(sequence)
                     sequence = Sequence()
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
-                    
+
         # Add the last sequence if it exists
         if sequence.sensor_data:
             self.sequences.append(sequence)
@@ -134,8 +134,8 @@ class Sensor:
         Serializes the sensor's data to a JSON format in the sensor's directory.
         """
         sensor_data = {
-            "name": self.name,
-            "date": self.date,
+            "source": os.path.basename(os.path.normpath(self.source_path)),
+            "day": self.date,
             "sensor": self.name,
             "sequences": {
                 f"sequence{str(idx).zfill(6)}": list(seq.sensor_data.keys())
@@ -192,7 +192,8 @@ class Day:
         """
         sensor_names = [sensor.name for sensor in self.sensors]
         json_obj = json.dumps({
-            "date": self.date,
+            "source": os.path.basename(os.path.normpath(self.source_path)),
+            "day": self.date,
             "sensors": sensor_names,
             "plaster_timestamp": datetime.now().isoformat()
         }, indent=4)
