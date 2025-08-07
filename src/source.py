@@ -3,13 +3,37 @@ import re
 import json
 from datetime import datetime
 
-class Sensor:
+class Sequence:
     """
-    A class representing a sensor that captures data.
+    A class representing a contiguous sequence of data captured by a sensor.
     """
     def __init__(self, source_path):
         self.source_path = source_path
         self.name = os.path.basename(os.path.normpath(source_path))
+        self.init()
+
+    def init(self):
+        """
+        Initializes the sequence by loading its data from the source path.
+        """
+        sequence_data_path = os.path.join(self.source_path, f"{self.name}.json")
+        # if os.path.exists(sequence_data_path):
+        #     with open(sequence_data_path, 'r') as json_file:
+        #         try:
+        #             self.data = json.load(json_file)
+        #         except Exception as e:
+        #             print(f"Error loading data for sequence {self.name}: {e}")
+
+class Sensor:
+    """
+    A class representing a sensor that captures data.
+    """
+    def __init__(self, source_path, date):
+        self.source_path = source_path
+        self.date = date
+        self.path = os.path.join(source_path, date)
+        self.plaster_path = os.path.join(self.path, 'plaster.json')
+        self.name = os.path.basename(os.path.normpath(self.path))
         self.init()
 
     def init(self):
@@ -46,8 +70,8 @@ class Day:
             self.sensors = []
             print(f"Day directory {self.path} does not exist.")
             return
-
-        self.sensors = [entry for entry in os.listdir(self.path)
+        
+        sensor_names = [entry for entry in os.listdir(self.path)
                         if os.path.isdir(os.path.join(self.path, entry)) and sensor_pattern.match(entry)]
 
         if os.path.exists(self.plaster_path):
@@ -58,18 +82,20 @@ class Day:
                 except Exception:
                     json_sensors = []
 
-            if set(json_sensors) == set(self.sensors):
+            if set(json_sensors) == set(sensor_names):
                 self.sensors = json_sensors
                 return
-
+            
+        self.sensors = [Sensor(self.source_path, self.date) for sensor in sensor_names]
         self.serialize(self.plaster_path)
 
     def serialize(self, plaster_path):
         """Serializes the day's data to a JSON format in the day's directory.
         """
+        sensor_names = [sensor.name for sensor in self.sensors]
         json_obj = json.dumps({
             "date": self.date,
-            "sensors": self.sensors,
+            "sensors": sensor_names,
             "plaster_timestamp": datetime.now().isoformat()
         }, indent=4)
         with open(plaster_path, 'w') as json_file:
@@ -121,7 +147,7 @@ class Source:
         Serializes the source data to a JSON format in the top-level directory.
         """
         json_obj = json.dumps({
-            "name": self.name,
+            "source": self.name,
             "days": [day.date for day in self.days],
             "plaster_timestamp": datetime.now().isoformat()
         }, indent=4)
