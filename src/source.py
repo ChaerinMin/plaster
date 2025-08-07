@@ -22,8 +22,8 @@ class Source:
     """
     A class representing the source of data, usually captured by a single BRICS rig (e.g., BRICS Mini, BRICS Studio).
     """
-    def __init__(self, name, path):
-        self.name = name
+    def __init__(self, path):
+        self.name = os.path.basename(os.path.normpath(path))
         self.path = path
         self.days = []
 
