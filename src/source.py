@@ -106,7 +106,7 @@ class Sensor:
             if ctr == 0:
                 sequence = Sequence()
                 sequence_name = "sequence" + str(seq_ctr).zfill(6)
-                sequence.insert(sequence_name, self.metadata[ctr])
+                sequence.insert(self.metadata[ctr].name, self.metadata[ctr])
             else:
                 # Check if the current metadata is contiguous with the previous one
                 prev_metadata = self.metadata[ctr - 1]
@@ -121,7 +121,7 @@ class Sensor:
                     sequence = Sequence()
                     seq_ctr += 1
                     sequence_name = "sequence" + str(ctr).zfill(6)
-                    sequence.insert(sequence_name, curr_metadata)
+                    sequence.insert(self.metadata[ctr].name, curr_metadata)
 
             self.serialize(self.plaster_path)
 
