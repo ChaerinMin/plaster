@@ -118,7 +118,7 @@ class Source:
         """
         json_obj = json.dumps({
             "name": self.name,
-            "days": [day.get_date() for day in self.days],
+            "days": [day.date for day in self.days],
             "plaster_timestamp": datetime.now().isoformat()
         }, indent=4)
         with open(plaster_path, 'w') as json_file:
