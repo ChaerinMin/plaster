@@ -422,8 +422,10 @@ class Source:
             print("Forcing reserialization of the source.")
 
         if time_stamp_units == "microseconds":
+            print("Using microseconds for time stamps.")
             TIME_THRESHOLD = 2 * 1e6  # Threshold in microseconds for sequence continuity
         else:
+            print("Using nanoseconds for time stamps.")
             TIME_THRESHOLD = 2 * 1e9  # Threshold in nanoseconds for sequence continuity
         self.init()
 
