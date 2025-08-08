@@ -116,14 +116,18 @@ class Sensor:
         - Identify sequences from all the video files
         """
         # First, get all the files
-        self.video_files = sorted(glob(os.path.join(self.path, '*.mp4')))
-        if len(self.video_files) == 0:
-            self.video_files = sorted(glob(os.path.join(self.path, '*.avi'))) # If it is not yet processed
+        self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.mp4')))
+        if len(self.sensor_data_files) == 0:
+            self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.avi'))) # If it is not yet processed
+        if len(self.sensor_data_files) == 0:
+            self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.flac'))) # If it is audio data
+        if len(self.sensor_data_files) == 0:
+            self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.wav'))) # If it is unprocessed audio data            
         self.metadata_files = sorted(glob(os.path.join(self.path, '*.txt')))
 
         # Check if the number of video files and metadata files match
-        assert len(self.video_files) == len(self.metadata_files), \
-            f"Number of video files ({len(self.video_files)}) does not match number of metadata files ({len(self.metadata_files)}) in {self.path}"
+        assert len(self.sensor_data_files) == len(self.metadata_files), \
+            f"Number of video files ({len(self.sensor_data_files)}) does not match number of metadata files ({len(self.metadata_files)}) in {self.path}"
 
         # Load metadata for each sensor
         self.metadata = []
