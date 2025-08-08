@@ -247,6 +247,7 @@ class Day:
             self.multisequences = []
 
         self.serialize(self.plaster_path)
+        print(f"Day {self.date} initialized with {len(self.sensors)} sensors and {len(self.multisequences)} multisequences.")
 
     def identify_multi_sequence(self, sensors):
         """
