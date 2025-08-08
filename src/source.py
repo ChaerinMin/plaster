@@ -73,7 +73,7 @@ class Sequence:
             return None
         start_time = min(timestamps)
         end_time = max(timestamps)
-        duration = end_time - start_time
+        duration = (end_time - start_time)*1e-9  # Convert to seconds
         num_frames = sum(len(metadata.timestamps) for metadata in self.sensor_data.values())
         self.stats = {
             "start_time": start_time,
