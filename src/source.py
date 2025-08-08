@@ -55,6 +55,7 @@ class Sequence:
             "start_time": -1,
             "end_time": -1,
             "duration": 0,
+            "avg_frame_rate": 0,
             "num_frames": 0
         }
 
@@ -79,6 +80,7 @@ class Sequence:
             "start_time": start_time,
             "end_time": end_time,
             "duration": duration,
+            "avg_frame_rate": num_frames / duration if duration > 0 else 0,
             "num_frames": num_frames
         }
 
