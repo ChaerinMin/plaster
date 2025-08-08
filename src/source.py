@@ -270,10 +270,7 @@ class Day:
             seq_list.sort(key=lambda x: x[2])
             per_sensor[sensor.name] = seq_list
 
-        # Early exit if 0 or 1 sequence total
-        if len(nodes) <= 1:
-            self.multisequences = []
-            return []
+    # Do not early-exit; even a single sequence should form its own multisequence
 
         # Build adjacency list for overlaps across sensors
         adj = {nid: set() for nid, *_ in nodes}
@@ -313,11 +310,7 @@ class Day:
         for nid in adj:
             if nid in visited:
                 continue
-            # Skip isolated nodes (no overlap edges)
-            if not adj[nid]:
-                visited.add(nid)
-                continue
-            # BFS/DFS to collect component
+            # BFS/DFS to collect component (includes isolated nodes)
             stack = [nid]
             comp = set()
             visited.add(nid)
@@ -360,6 +353,10 @@ class Day:
 
         # Sort multisequences by start time for determinism
         multisequences.sort(key=lambda ms: ms["start_time"]) 
+
+        # Assign deterministic names: multisequence000001, ...
+        for i, ms in enumerate(multisequences, start=1):
+            ms["name"] = f"multisequence{str(i).zfill(6)}"
 
         self.multisequences = multisequences
         return multisequences
