@@ -4,7 +4,8 @@ import json
 from datetime import datetime
 from glob import glob
 
-TIME_THRESHOLD = 5 # THRESHOLD in seconds
+TIME_MULTIPLIER = 1e9 # Nanoseconds by default
+TIME_THRESHOLD_S = 5 # THRESHOLD in seconds
 
 class SensorMetadata:
     """
@@ -76,7 +77,7 @@ class Sequence:
             return None
         start_time = min(timestamps)
         end_time = max(timestamps)
-        duration = (end_time - start_time)*1e-9  # Convert to seconds
+        duration = (end_time - start_time)*(1/TIME_MULTIPLIER)  # Convert to seconds
         num_frames = sum(len(metadata.timestamps) for metadata in self.sensor_data.values())
         self.stats = {
             "start_time": start_time,
@@ -167,7 +168,7 @@ class Sensor:
                 assert len(prev_metadata.timestamps) > 0 and len(curr_metadata.timestamps) > 0, "Metadata timestamps cannot be empty."
 
                 # print(f"Checking sequence continuity: {prev_metadata.timestamps[-1]} -> {curr_metadata.timestamps[0]}")
-                if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= TIME_THRESHOLD:
+                if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= TIME_THRESHOLD_S * TIME_MULTIPLIER:
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
                 else:
                     self.sequences.append(sequence)
@@ -423,10 +424,10 @@ class Source:
 
         if time_stamp_units == "microseconds":
             print("Using microseconds for time stamps.")
-            TIME_THRESHOLD = TIME_THRESHOLD * 1e6  # Threshold in microseconds for sequence continuity
+            TIME_MULTIPLIER = 1e6
         else:
             print("Using nanoseconds for time stamps.")
-            TIME_THRESHOLD = TIME_THRESHOLD * 1e9  # Threshold in nanoseconds for sequence continuity
+            TIME_MULTIPLIER = 1e9
         self.init()
 
     def init(self):
