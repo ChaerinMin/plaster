@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from glob import glob
 
-TIME_THRESHOLD = 2 * 1e9  # Threshold in nanoseconds for sequence continuity
+TIME_THRESHOLD = 5 # THRESHOLD in seconds
 
 class SensorMetadata:
     """
@@ -423,10 +423,10 @@ class Source:
 
         if time_stamp_units == "microseconds":
             print("Using microseconds for time stamps.")
-            TIME_THRESHOLD = 2 * 1e6  # Threshold in microseconds for sequence continuity
+            TIME_THRESHOLD = TIME_THRESHOLD * 1e6  # Threshold in microseconds for sequence continuity
         else:
             print("Using nanoseconds for time stamps.")
-            TIME_THRESHOLD = 2 * 1e9  # Threshold in nanoseconds for sequence continuity
+            TIME_THRESHOLD = TIME_THRESHOLD * 1e9  # Threshold in nanoseconds for sequence continuity
         self.init()
 
     def init(self):
