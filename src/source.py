@@ -51,6 +51,36 @@ class Sequence:
     """
     def __init__(self):
         self.sensor_data = dict()
+        self.stats = {
+            "start_time": -1,
+            "end_time": -1,
+            "duration": 0,
+            "num_frames": 0
+        }
+
+    def compute_stats(self):
+        """
+        Computes statistics for the sequence.
+        This method should handle the logic of computing statistics for the sequence.
+        """
+        # Compute duration, number of frames, etc.
+        if not self.sensor_data:
+            return None
+        timestamps = []
+        for metadata in self.sensor_data.values():
+            timestamps.extend(metadata.timestamps)
+        if not timestamps:
+            return None
+        start_time = min(timestamps)
+        end_time = max(timestamps)
+        duration = end_time - start_time
+        num_frames = sum(len(metadata.timestamps) for metadata in self.sensor_data.values())
+        self.stats = {
+            "start_time": start_time,
+            "end_time": end_time,
+            "duration": duration,
+            "num_frames": num_frames
+        }
 
     def insert(self, name, sensor_metadata):
         """
@@ -58,6 +88,7 @@ class Sequence:
         This method should handle the logic of adding metadata to the sequence.
         """
         self.sensor_data[name] = sensor_metadata
+        self.compute_stats()
 
 class Sensor:
     """
@@ -138,8 +169,12 @@ class Sensor:
             "day": self.date,
             "sensor": self.name,
             "sequences": {
-                f"sequence{str(idx).zfill(6)}": list(seq.sensor_data.keys())
-                for idx, seq in enumerate(self.sequences)
+                f"sequence{str(idx).zfill(6)}": {
+                    "sensor_data": list(seq.sensor_data.keys()),
+                    "start_time": seq.stats["start_time"],
+                    "duration": seq.stats["duration"],
+                    "num_frames": seq.stats["num_frames"]
+                } for idx, seq in enumerate(self.sequences)
             },
             "plaster_timestamp": datetime.now().isoformat()
         }
