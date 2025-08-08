@@ -174,6 +174,7 @@ class Sensor:
                 f"sequence{str(idx).zfill(6)}": {
                     "sensor_data": list(seq.sensor_data.keys()),
                     "start_time": seq.stats["start_time"],
+                    "end_time": seq.stats["end_time"],
                     "duration": seq.stats["duration"],
                     "avg_frame_rate": seq.stats["avg_frame_rate"],
                     "num_frames": seq.stats["num_frames"]
@@ -183,6 +184,13 @@ class Sensor:
         }
         with open(plaster_path, 'w') as json_file:
             json.dump(sensor_data, json_file, indent=4)
+
+class MultiSequence:
+    """
+    A class representing a collection of contiguous sequences from  multiple sensors.
+    """
+    def __init__(self):
+        self.sequences = []
 
 class Day:
     """
