@@ -124,6 +124,8 @@ class Sensor:
         if len(self.sensor_data_files) == 0:
             self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.wav'))) # If it is unprocessed audio data            
         self.metadata_files = sorted(glob(os.path.join(self.path, '*.txt')))
+        # Check if any of the txt files are 0 bytes. If so, exclude them
+        self.metadata_files = [f for f in self.metadata_files if os.path.getsize(f) > 0]
 
         # Check if the number of video files and metadata files match
         assert len(self.sensor_data_files) == len(self.metadata_files), \
