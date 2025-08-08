@@ -124,8 +124,20 @@ class Sensor:
         if len(self.sensor_data_files) == 0:
             self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.wav'))) # If it is unprocessed audio data            
         self.metadata_files = sorted(glob(os.path.join(self.path, '*.txt')))
-        # Check if any of the txt files are 0 bytes. If so, exclude them
-        self.metadata_files = [f for f in self.metadata_files if os.path.getsize(f) > 0]
+        # Check if any of the txt files are 0 bytes. If so, exclude them and their corresponding sensor files
+        # First get a list of txt files that are 0 bytes
+        empty_txt_files = [f for f in self.metadata_files if os.path.getsize(f) == 0]
+        # Delete the corresponding entries from the metadata_files and sensor_data_files
+        for txt_file in empty_txt_files:
+            print(f"Excluding empty metadata file and corresponding sensor data: {txt_file}")
+            self.metadata_files.remove(txt_file)
+            base, _ = os.path.splitext(txt_file)
+            to_remove = [f for f in self.sensor_data_files if os.path.splitext(f)[0] == base]
+            for f in to_remove:
+                try:
+                    self.sensor_data_files.remove(f)
+                except ValueError:
+                    pass
 
         # Check if the number of video files and metadata files match
         if len(self.sensor_data_files) != len(self.metadata_files):
