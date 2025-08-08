@@ -4,8 +4,7 @@ import json
 from datetime import datetime
 from glob import glob
 
-TIME_MULTIPLIER = 1e9 # Nanoseconds by default
-TIME_THRESHOLD_S = 5 # THRESHOLD in seconds
+from run_plaster import TIME_MULTIPLIER, TIME_THRESHOLD_S
 
 class SensorMetadata:
     """
@@ -422,12 +421,6 @@ class Source:
         if self.force_reserialize:
             print("Forcing reserialization of the source.")
 
-        if time_stamp_units == "microseconds":
-            print("Using microseconds for time stamps.")
-            TIME_MULTIPLIER = 1e6
-        else:
-            print("Using nanoseconds for time stamps.")
-            TIME_MULTIPLIER = 1e9
         self.init()
 
     def init(self):
