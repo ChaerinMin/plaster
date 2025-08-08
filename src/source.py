@@ -144,7 +144,7 @@ class Sensor:
         # Check if the number of video files and metadata files match
         if len(self.sensor_data_files) != len(self.metadata_files):
             print(
-                f"WARNING: Number of video files ({len(self.sensor_data_files)}) does not match number of metadata files ({len(self.metadata_files)}) in {self.path}"
+                f"WARNING: Number of data files ({len(self.sensor_data_files)}) does not match number of metadata files ({len(self.metadata_files)}) in {self.path}"
             )
             return
 
@@ -362,7 +362,7 @@ class Day:
                     "sequence_index": sidx,
                     "start_time": st,
                     "end_time": en,
-                    "duration": (en - st) * 1e-9
+                    "duration": (en - st) * (1/TIME_MULTIPLIER)
                 })
                 comp_start = st if comp_start is None else min(comp_start, st)
                 comp_end = en if comp_end is None else max(comp_end, en)
@@ -373,7 +373,7 @@ class Day:
             multisequences.append({
                 "start_time": comp_start,
                 "end_time": comp_end,
-                "duration": (comp_end - comp_start) * 1e-9 if comp_end is not None and comp_start is not None else 0,
+                "duration": (comp_end - comp_start) * (1/TIME_MULTIPLIER) if comp_end is not None and comp_start is not None else 0,
                 "members": members
             })
 
