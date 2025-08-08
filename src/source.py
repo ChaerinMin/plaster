@@ -4,8 +4,6 @@ import json
 from datetime import datetime
 from glob import glob
 
-from run_plaster import TIME_MULTIPLIER, TIME_THRESHOLD_S
-
 class SensorMetadata:
     """
     A class representing for a sensor.
@@ -51,8 +49,9 @@ class Sequence:
     """
     A class representing a contiguous sequence of data captured by a sensor.
     """
-    def __init__(self):
+    def __init__(self, time_stamp_units="nanoseconds"):
         self.sensor_data = dict()
+        self.time_stamp_units = time_stamp_units
         self.stats = {
             "start_time": -1,
             "end_time": -1,
@@ -76,6 +75,7 @@ class Sequence:
             return None
         start_time = min(timestamps)
         end_time = max(timestamps)
+        TIME_MULTIPLIER = 1e9 if self.time_stamp_units == "nanoseconds" else 1e6
         duration = (end_time - start_time)*(1/TIME_MULTIPLIER)  # Convert to seconds
         num_frames = sum(len(metadata.timestamps) for metadata in self.sensor_data.values())
         self.stats = {
@@ -98,7 +98,7 @@ class Sensor:
     """
     A class representing a sensor that captures data.
     """
-    def __init__(self, source_path, date, sensor_name, force_reserialize=False):
+    def __init__(self, source_path, date, sensor_name, force_reserialize=False, time_stamp_units="nanoseconds"):
         self.source_path = source_path
         self.date = date
         self.name = sensor_name
@@ -106,6 +106,7 @@ class Sensor:
         self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.force_reserialize = force_reserialize
         self.sequences = []
+        self.time_stamp_units = time_stamp_units
         self.init()
 
     def init(self):
@@ -156,7 +157,7 @@ class Sensor:
                 self.metadata.append(sensor_metadata)
 
         # Next divide them into sequences
-        sequence = Sequence()
+        sequence = Sequence(self.time_stamp_units)
         for ctr in range(len(self.metadata)):
             if ctr == 0:
                 sequence.insert(self.metadata[ctr].name, self.metadata[ctr])
@@ -167,11 +168,13 @@ class Sensor:
                 assert len(prev_metadata.timestamps) > 0 and len(curr_metadata.timestamps) > 0, "Metadata timestamps cannot be empty."
 
                 # print(f"Checking sequence continuity: {prev_metadata.timestamps[-1]} -> {curr_metadata.timestamps[0]}")
+                TIME_MULTIPLIER = 1e9 if self.time_stamp_units == "nanoseconds" else 1e6
+                TIME_THRESHOLD_S = 2
                 if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= TIME_THRESHOLD_S * TIME_MULTIPLIER:
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
                 else:
                     self.sequences.append(sequence)
-                    sequence = Sequence()
+                    sequence = Sequence(self.time_stamp_units)
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
 
         # Add the last sequence if it exists
@@ -214,9 +217,10 @@ class Day:
     """
     A class representing a day of data captured by a BRICS rig.
     """
-    def __init__(self, date, source_path, force_reserialize=False):
+    def __init__(self, date, source_path, force_reserialize=False, time_stamp_units="nanoseconds"):
         self.source_path = source_path
         self.date = date
+        self.time_stamp_units = time_stamp_units
         self.path = os.path.join(source_path, date)
         self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.sensors = []
@@ -237,7 +241,7 @@ class Day:
         sensor_names = [entry for entry in os.listdir(self.path)
                         if os.path.isdir(os.path.join(self.path, entry)) and sensor_pattern.match(entry)]
 
-        self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize) for sensor in sensor_names]
+        self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize, self.time_stamp_units) for sensor in sensor_names]
         # Identify multi-sensor overlapping sequences for this day
         try:
             self.multisequences = self.identify_multi_sequence(self.sensors)
@@ -350,6 +354,7 @@ class Day:
             if comp:
                 components.append(comp)
 
+        TIME_MULTIPLIER = 1e9 if self.time_stamp_units == "nanoseconds" else 1e6
         multisequences = []
         for comp in components:
             members = []
@@ -419,6 +424,7 @@ class Source:
         self.days = []
         self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.force_reserialize = force_reserialize
+        self.time_stamp_units = time_stamp_units
         if self.force_reserialize:
             print("Forcing reserialization of the source.")
 
@@ -441,11 +447,11 @@ class Source:
                     json_days = []
 
             if set(json_days) == set(dir_days):
-                self.days = [Day(date, self.path, self.force_reserialize) for date in json_days]
+                self.days = [Day(date, self.path, self.force_reserialize, self.time_stamp_units) for date in json_days]
                 return
             # else, update JSON below
 
-        self.days = [Day(date, self.path, self.force_reserialize) for date in dir_days]
+        self.days = [Day(date, self.path, self.force_reserialize, self.time_stamp_units) for date in dir_days]
         self.serialize(self.plaster_path)
 
         print(f"All done.")
