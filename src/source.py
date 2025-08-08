@@ -4,6 +4,8 @@ import json
 from datetime import datetime
 from glob import glob
 
+TIME_THRESHOLD = 2 * 1e9  # Threshold in nanoseconds for sequence continuity
+
 class SensorMetadata:
     """
     A class representing for a sensor.
@@ -104,7 +106,6 @@ class Sensor:
         self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.force_reserialize = force_reserialize
         self.sequences = []
-        self.THRESHOLD = 2*1e9  # Threshold in nanoseconds for sequence continuity
         self.init()
 
     def init(self):
@@ -166,7 +167,7 @@ class Sensor:
                 assert len(prev_metadata.timestamps) > 0 and len(curr_metadata.timestamps) > 0, "Metadata timestamps cannot be empty."
 
                 # print(f"Checking sequence continuity: {prev_metadata.timestamps[-1]} -> {curr_metadata.timestamps[0]}")
-                if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= self.THRESHOLD:
+                if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= TIME_THRESHOLD:
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
                 else:
                     self.sequences.append(sequence)
@@ -410,7 +411,7 @@ class Source:
     """
     A class representing the source of data, usually captured by a single BRICS rig (e.g., BRICS Mini, BRICS Studio).
     """
-    def __init__(self, path, force_reserialize=False):
+    def __init__(self, path, force_reserialize=False, time_stamp_units="nanoseconds"):
         self.name = os.path.basename(os.path.normpath(path))
         self.path = path
         print(f"Initializing Source: {self.name} at {self.path}")
@@ -419,6 +420,11 @@ class Source:
         self.force_reserialize = force_reserialize
         if self.force_reserialize:
             print("Forcing reserialization of the source.")
+
+        if time_stamp_units == "microseconds":
+            TIME_THRESHOLD = 2 * 1e6  # Threshold in microseconds for sequence continuity
+        else:
+            TIME_THRESHOLD = 2 * 1e9  # Threshold in nanoseconds for sequence continuity
         self.init()
 
     def init(self):
