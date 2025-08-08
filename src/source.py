@@ -185,13 +185,6 @@ class Sensor:
         with open(plaster_path, 'w') as json_file:
             json.dump(sensor_data, json_file, indent=4)
 
-class MultiSequence:
-    """
-    A class representing a collection of contiguous sequences from  multiple sensors.
-    """
-    def __init__(self):
-        self.sequences = []
-
 class Day:
     """
     A class representing a day of data captured by a BRICS rig.
@@ -202,6 +195,7 @@ class Day:
         self.path = os.path.join(source_path, date)
         self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.sensors = []
+        self.multisequences = []
         self.force_reserialize = force_reserialize
         self.init()
 
@@ -218,29 +212,167 @@ class Day:
         sensor_names = [entry for entry in os.listdir(self.path)
                         if os.path.isdir(os.path.join(self.path, entry)) and sensor_pattern.match(entry)]
 
-        if os.path.exists(self.plaster_path) and not self.force_reserialize:
-            with open(self.plaster_path, 'r') as json_file:
-                try:
-                    data = json.load(json_file)
-                    json_sensors = data.get('sensors', [])
-                except Exception:
-                    json_sensors = []
-
-            if set(json_sensors) == set(sensor_names):
-                self.sensors = json_sensors
-                return
-
         self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize) for sensor in sensor_names]
+        # Identify multi-sensor overlapping sequences for this day
+        try:
+            self.multisequences = self.identify_multi_sequence(self.sensors)
+        except Exception as e:
+            # Do not fail day initialization if grouping fails; log and continue
+            print(f"Failed to identify multisequences for {self.date}: {e}")
+            self.multisequences = []
+
         self.serialize(self.plaster_path)
 
+    def identify_multi_sequence(self, sensors):
+        """
+        Identify cross-sensor multisequences by overlapping time windows.
+
+        Approach:
+        - Collect all (sensor, sequence) intervals [start_time, end_time].
+        - Build an undirected graph where an edge connects two sequences from
+          different sensors if their intervals overlap at all.
+        - Connected components of this graph are multisequences. This naturally
+          ensures each sensor sequence belongs to at most one multisequence.
+
+        Returns: list of multisequences. Each multisequence is a dict:
+        {
+            "start_time": <min_start_of_members>,
+            "end_time": <max_end_of_members>,
+            "duration": <seconds>,
+            "members": [
+                { "sensor": str, "sequence_index": int,
+                  "start_time": int, "end_time": int, "duration": float }, ...
+            ]
+        }
+        """
+
+        if sensors is None:
+            sensors = self.sensors
+
+        # Collect intervals per sensor and a flat list of nodes
+        nodes = []  # (node_id, sensor_name, seq_index, start, end)
+        per_sensor = {}
+        node_id = 0
+
+        for sensor in sensors:
+            seq_list = []
+            for idx, seq in enumerate(sensor.sequences):
+                st = seq.stats.get("start_time", -1)
+                en = seq.stats.get("end_time", -1)
+                if st is None or en is None or st < 0 or en < 0:
+                    continue
+                if st > en:
+                    st, en = en, st
+                seq_list.append((idx, seq, st, en))
+                nodes.append((node_id, sensor.name, idx, st, en))
+                node_id += 1
+            # Sort sequences within each sensor by start time (helps determinism)
+            seq_list.sort(key=lambda x: x[2])
+            per_sensor[sensor.name] = seq_list
+
+        # Early exit if 0 or 1 sequence total
+        if len(nodes) <= 1:
+            self.multisequences = []
+            return []
+
+        # Build adjacency list for overlaps across sensors
+        adj = {nid: set() for nid, *_ in nodes}
+
+        # Index nodes by sensor for efficient cross comparison
+        by_sensor = {}
+        for nid, sname, sidx, st, en in nodes:
+            by_sensor.setdefault(sname, []).append((nid, st, en))
+        # Sort each sensor's list by start for efficient merging
+        for sname in by_sensor:
+            by_sensor[sname].sort(key=lambda x: x[1])
+
+        sensor_names = list(by_sensor.keys())
+        # Compare only across different sensors using two-pointer sweep
+        for i in range(len(sensor_names)):
+            for j in range(i + 1, len(sensor_names)):
+                A = by_sensor[sensor_names[i]]  # list of (nid, st, en)
+                B = by_sensor[sensor_names[j]]
+                pa = pb = 0
+                while pa < len(A) and pb < len(B):
+                    nid_a, sa, ea = A[pa]
+                    nid_b, sb, eb = B[pb]
+                    # Overlap if sa <= eb and sb <= ea
+                    if sa <= eb and sb <= ea:
+                        adj[nid_a].add(nid_b)
+                        adj[nid_b].add(nid_a)
+                    # Advance pointer with smaller end
+                    if ea < eb:
+                        pa += 1
+                    else:
+                        pb += 1
+
+        # Find connected components (ignore isolated nodes since they don't overlap)
+        visited = set()
+        nid_to_meta = {nid: (sname, sidx, st, en) for nid, sname, sidx, st, en in nodes}
+        components = []
+        for nid in adj:
+            if nid in visited:
+                continue
+            # Skip isolated nodes (no overlap edges)
+            if not adj[nid]:
+                visited.add(nid)
+                continue
+            # BFS/DFS to collect component
+            stack = [nid]
+            comp = set()
+            visited.add(nid)
+            while stack:
+                cur = stack.pop()
+                comp.add(cur)
+                for nei in adj[cur]:
+                    if nei not in visited:
+                        visited.add(nei)
+                        stack.append(nei)
+            if comp:
+                components.append(comp)
+
+        multisequences = []
+        for comp in components:
+            members = []
+            comp_start = None
+            comp_end = None
+            for nid in sorted(comp):  # stable order by node id
+                sname, sidx, st, en = nid_to_meta[nid]
+                members.append({
+                    "sensor": sname,
+                    "sequence_index": sidx,
+                    "start_time": st,
+                    "end_time": en,
+                    "duration": (en - st) * 1e-9
+                })
+                comp_start = st if comp_start is None else min(comp_start, st)
+                comp_end = en if comp_end is None else max(comp_end, en)
+
+            # Sort members by start time to satisfy "sort sequences inside each sensor"
+            members.sort(key=lambda m: (m["start_time"], m["sensor"]))
+
+            multisequences.append({
+                "start_time": comp_start,
+                "end_time": comp_end,
+                "duration": (comp_end - comp_start) * 1e-9 if comp_end is not None and comp_start is not None else 0,
+                "members": members
+            })
+
+        # Sort multisequences by start time for determinism
+        multisequences.sort(key=lambda ms: ms["start_time"]) 
+
+        self.multisequences = multisequences
+        return multisequences
+
     def serialize(self, plaster_path):
-        """Serializes the day's data to a JSON format in the day's directory.
+        """
+        Serializes the day's data to a JSON format in the day's directory.
         """
         sensor_names = [sensor.name for sensor in self.sensors]
         json_obj = json.dumps({
             "source": os.path.basename(os.path.normpath(self.source_path)),
             "day": self.date,
-            "sensors": sensor_names,
+            "multisequences": self.multisequences,
             "plaster_timestamp": datetime.now().isoformat()
         }, indent=4)
         with open(plaster_path, 'w') as json_file:
