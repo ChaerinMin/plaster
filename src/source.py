@@ -120,17 +120,7 @@ class Sensor:
         if os.path.exists(self.plaster_path) and not self.force_reserialize:
             print(f"Using cached sensor data for {self.date}.")
             return
-
-        # First, get all the files
-        self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.mp4')))
-        if len(self.sensor_data_files) == 0:
-            self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.avi'))) # If it is not yet processed
-
-            if set(json_sensors) == set(sensor_names):
-                self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize, self.time_stamp_units) for sensor in json_sensors]
-                return
-            # else, update JSON below
-
+        
         # First, get all the files
         self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.mp4')))
         if len(self.sensor_data_files) == 0:
