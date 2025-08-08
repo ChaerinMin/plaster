@@ -175,6 +175,7 @@ class Sensor:
                     "sensor_data": list(seq.sensor_data.keys()),
                     "start_time": seq.stats["start_time"],
                     "duration": seq.stats["duration"],
+                    "avg_frame_rate": seq.stats["avg_frame_rate"],
                     "num_frames": seq.stats["num_frames"]
                 } for idx, seq in enumerate(self.sequences)
             },
