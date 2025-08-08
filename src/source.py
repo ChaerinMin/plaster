@@ -166,20 +166,23 @@ class Sensor:
         """
         Serializes the sensor's data to a JSON format in the sensor's directory.
         """
+        sequences_list = []
+        for idx, seq in enumerate(self.sequences, start=1):
+            sequences_list.append({
+                "name": f"sequence{str(idx).zfill(6)}",
+                "sensor_data": list(seq.sensor_data.keys()),
+                "start_time": seq.stats["start_time"],
+                "end_time": seq.stats["end_time"],
+                "duration": seq.stats["duration"],
+                "avg_frame_rate": seq.stats["avg_frame_rate"],
+                "num_frames": seq.stats["num_frames"]
+            })
+
         sensor_data = {
             "source": os.path.basename(os.path.normpath(self.source_path)),
             "day": self.date,
             "sensor": self.name,
-            "sequences": {
-                f"sequence{str(idx).zfill(6)}": {
-                    "sensor_data": list(seq.sensor_data.keys()),
-                    "start_time": seq.stats["start_time"],
-                    "end_time": seq.stats["end_time"],
-                    "duration": seq.stats["duration"],
-                    "avg_frame_rate": seq.stats["avg_frame_rate"],
-                    "num_frames": seq.stats["num_frames"]
-                } for idx, seq in enumerate(self.sequences)
-            },
+            "sequences": sequences_list,
             "plaster_timestamp": datetime.now().isoformat()
         }
         with open(plaster_path, 'w') as json_file:
