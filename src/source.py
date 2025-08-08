@@ -128,8 +128,11 @@ class Sensor:
         self.metadata_files = [f for f in self.metadata_files if os.path.getsize(f) > 0]
 
         # Check if the number of video files and metadata files match
-        assert len(self.sensor_data_files) == len(self.metadata_files), \
-            f"Number of video files ({len(self.sensor_data_files)}) does not match number of metadata files ({len(self.metadata_files)}) in {self.path}"
+        if len(self.sensor_data_files) != len(self.metadata_files):
+            print(
+                f"WARNING: Number of video files ({len(self.sensor_data_files)}) does not match number of metadata files ({len(self.metadata_files)}) in {self.path}"
+            )
+            return
 
         # Load metadata for each sensor
         self.metadata = []
