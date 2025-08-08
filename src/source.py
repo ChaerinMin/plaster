@@ -357,9 +357,16 @@ class Day:
         # Sort multisequences by start time for determinism
         multisequences.sort(key=lambda ms: ms["start_time"]) 
 
-        # Assign deterministic names: multisequence000001, ...
+        # Assign deterministic names and put 'name' first in each dict for readability
         for i, ms in enumerate(multisequences, start=1):
-            ms["name"] = f"multisequence{str(i).zfill(6)}"
+            name = f"multisequence{str(i).zfill(6)}"
+            multisequences[i - 1] = {
+                "name": name,
+                "start_time": ms.get("start_time"),
+                "end_time": ms.get("end_time"),
+                "duration": ms.get("duration"),
+                "members": ms.get("members", [])
+            }
 
         self.multisequences = multisequences
         return multisequences
