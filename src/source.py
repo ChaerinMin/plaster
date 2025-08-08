@@ -117,6 +117,20 @@ class Sensor:
         - Check for consistency of videos/audio and txt file
         - Identify sequences from all the video files
         """
+        if os.path.exists(self.plaster_path) and not self.force_reserialize:
+            print(f"Using cached sensor data for {self.date}.")
+            return
+
+        # First, get all the files
+        self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.mp4')))
+        if len(self.sensor_data_files) == 0:
+            self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.avi'))) # If it is not yet processed
+
+            if set(json_sensors) == set(sensor_names):
+                self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize, self.time_stamp_units) for sensor in json_sensors]
+                return
+            # else, update JSON below
+
         # First, get all the files
         self.sensor_data_files = sorted(glob(os.path.join(self.path, '*.mp4')))
         if len(self.sensor_data_files) == 0:
@@ -240,6 +254,20 @@ class Day:
         
         sensor_names = [entry for entry in os.listdir(self.path)
                         if os.path.isdir(os.path.join(self.path, entry)) and sensor_pattern.match(entry)]
+
+        if os.path.exists(self.plaster_path) and not self.force_reserialize:
+            with open(self.plaster_path, 'r') as json_file:
+                try:
+                    data = json.load(json_file)
+                    json_sensors = data.get('sensors', [])
+                except Exception:
+                    json_sensors = []
+
+            if set(json_sensors) == set(sensor_names):
+                print(f"Using cached sensor data for {self.date}.")
+                self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize, self.time_stamp_units) for sensor in json_sensors]
+                return
+            # else, update JSON below
 
         self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize, self.time_stamp_units) for sensor in sensor_names]
         # Identify multi-sensor overlapping sequences for this day
