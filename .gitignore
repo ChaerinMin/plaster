@@ -1,8 +1,10 @@
-# Python bytecode caches
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Tool caches
+__pycache__/
+.idea/
+.vscode/
+build
+bin
 .ipynb_checkpoints/
 .cache/
