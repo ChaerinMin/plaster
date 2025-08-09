@@ -6,6 +6,18 @@ from glob import glob
 
 SEQUENCE_THRESHOLD_S = 1.05 # How long before a sequence is split. Assuming no sensors captures at a rate of less than 1 FPS
 
+def get_time_multiplier(units):
+    if units == "nanoseconds":
+        return 1e9
+    elif units == "microseconds":
+        return 1e6
+    elif units == "milliseconds":
+        return 1e3
+    elif units == "seconds":
+        return 1
+    else:
+        raise ValueError(f"Unknown time unit: {units}")
+
 class SensorMetadata:
     """
     A class representing for a sensor.
@@ -77,7 +89,7 @@ class Sequence:
             return None
         start_time = min(timestamps)
         end_time = max(timestamps)
-        TIME_MULTIPLIER = 1e9 if self.time_stamp_units == "nanoseconds" else 1e6
+        TIME_MULTIPLIER = get_time_multiplier(self.time_stamp_units)
         duration = (end_time - start_time)*(1/TIME_MULTIPLIER)  # Convert to seconds
         num_frames = sum(len(metadata.timestamps) for metadata in self.sensor_data.values())
         self.stats = {
@@ -163,7 +175,7 @@ class Sensor:
                 self.metadata.append(sensor_metadata)
 
         # Next divide them into sequences
-        sequence = Sequence(self.time_stamp_units)
+        sequence = Sequence(time_stamp_units=self.time_stamp_units)
         for ctr in range(len(self.metadata)):
             if ctr == 0:
                 sequence.insert(self.metadata[ctr].name, self.metadata[ctr])
@@ -174,12 +186,12 @@ class Sensor:
                 assert len(prev_metadata.timestamps) > 0 and len(curr_metadata.timestamps) > 0, "Metadata timestamps cannot be empty."
 
                 # print(f"Checking sequence continuity: {prev_metadata.timestamps[-1]} -> {curr_metadata.timestamps[0]}")
-                TIME_MULTIPLIER = 1e9 if self.time_stamp_units == "nanoseconds" else 1e6
+                TIME_MULTIPLIER = get_time_multiplier(self.time_stamp_units)
                 if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= SEQUENCE_THRESHOLD_S * TIME_MULTIPLIER:
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
                 else:
                     self.sequences.append(sequence)
-                    sequence = Sequence(self.time_stamp_units)
+                    sequence = Sequence(time_stamp_units=self.time_stamp_units)
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
 
         # Add the last sequence if it exists
@@ -257,11 +269,11 @@ class Day:
 
             if set(json_sensors) == set(sensor_names):
                 print(f"Using cached sensor data for {self.date}.")
-                self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize) for sensor in json_sensors]
+                self.sensors = [Sensor(self.source_path, self.date, sensor, force_reserialize=self.force_reserialize) for sensor in json_sensors]
                 return
             # else, update JSON below
 
-        self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize) for sensor in sensor_names]
+        self.sensors = [Sensor(self.source_path, self.date, sensor, force_reserialize=self.force_reserialize) for sensor in sensor_names]
         # Identify multi-sensor overlapping sequences for this day
         try:
             self.multisequences = self.identify_multi_sequence(self.sensors)
@@ -377,7 +389,7 @@ class Day:
             if comp:
                 components.append(comp)
 
-        TIME_MULTIPLIER = 1e9 if self.time_stamp_units == "nanoseconds" else 1e6
+        TIME_MULTIPLIER = get_time_multiplier(self.time_stamp_units)
         multisequences = []
         for comp in components:
             members = []
@@ -517,14 +529,14 @@ class Source:
                     json_days = []
 
             if set(json_days) == set(dir_days):
-                self.days = [Day(date, self.path, self.force_reserialize, self.time_stamp_units) for date in json_days]
+                self.days = [Day(date, self.path, force_reserialize=self.force_reserialize, time_stamp_units=self.time_stamp_units) for date in json_days]
                 # Compute and write total duration even when using cached day list
                 self.duration = self.compute_total_duration()
                 self.serialize(self.plaster_path)
                 return
             # else, update JSON below
 
-        self.days = [Day(date, self.path, self.force_reserialize, self.time_stamp_units) for date in dir_days]
+        self.days = [Day(date, self.path, force_reserialize=self.force_reserialize, time_stamp_units=self.time_stamp_units) for date in dir_days]
         self.duration = self.compute_total_duration()
         self.serialize(self.plaster_path)
 
