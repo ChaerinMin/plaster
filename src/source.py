@@ -231,6 +231,7 @@ class Day:
         self.sensors = []
         self.multisequences = []
         self.force_reserialize = force_reserialize
+        self.duration = 0.0  # total day duration in seconds (sum of multisequence durations)
         self.init()
 
     def init(self):
@@ -256,11 +257,11 @@ class Day:
 
             if set(json_sensors) == set(sensor_names):
                 print(f"Using cached sensor data for {self.date}.")
-                self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize, self.time_stamp_units) for sensor in json_sensors]
+                self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize) for sensor in json_sensors]
                 return
             # else, update JSON below
 
-        self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize, self.time_stamp_units) for sensor in sensor_names]
+        self.sensors = [Sensor(self.source_path, self.date, sensor, self.force_reserialize) for sensor in sensor_names]
         # Identify multi-sensor overlapping sequences for this day
         try:
             self.multisequences = self.identify_multi_sequence(self.sensors)
@@ -268,6 +269,9 @@ class Day:
             # Do not fail day initialization if grouping fails; log and continue
             print(f"Failed to identify multisequences for {self.date}: {e}")
             self.multisequences = []
+
+        # Compute total day duration as sum of multisequence durations
+        self.duration = self.compute_total_duration()
 
         self.serialize(self.plaster_path)
         print(f"Day {self.date} initialized with {len(self.sensors)} sensors and {len(self.multisequences)} multisequences.")
@@ -418,6 +422,17 @@ class Day:
         self.multisequences = multisequences
         return multisequences
 
+    def compute_total_duration(self):
+        """Compute total duration (in seconds) as the sum of all multisequence durations."""
+        total = 0.0
+        for ms in self.multisequences:
+            try:
+                total += float(ms.get("duration", 0) or 0)
+            except Exception:
+                # In case duration is malformed; skip
+                continue
+        return total
+
     def serialize(self, plaster_path):
         """
         Serializes the day's data to a JSON format in the day's directory.
@@ -426,6 +441,7 @@ class Day:
         json_obj = json.dumps({
             "source": os.path.basename(os.path.normpath(self.source_path)),
             "day": self.date,
+            "duration": self.duration,
             "multisequences": self.multisequences,
             "plaster_timestamp": datetime.now().isoformat()
         }, indent=4)
@@ -443,6 +459,7 @@ class Source:
         self.days = []
         self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.force_reserialize = force_reserialize
+        self.duration = 0.0  # total duration across all days, in seconds
 
         # Automatically find the timestamp units
         self.time_stamp_units = "nanoseconds"
@@ -501,10 +518,14 @@ class Source:
 
             if set(json_days) == set(dir_days):
                 self.days = [Day(date, self.path, self.force_reserialize, self.time_stamp_units) for date in json_days]
+                # Compute and write total duration even when using cached day list
+                self.duration = self.compute_total_duration()
+                self.serialize(self.plaster_path)
                 return
             # else, update JSON below
 
         self.days = [Day(date, self.path, self.force_reserialize, self.time_stamp_units) for date in dir_days]
+        self.duration = self.compute_total_duration()
         self.serialize(self.plaster_path)
 
         print(f"All done.")
@@ -515,9 +536,20 @@ class Source:
         """
         json_obj = json.dumps({
             "source": self.name,
+            "duration": self.duration,
             "days": [day.date for day in self.days],
             "plaster_timestamp": datetime.now().isoformat()
         }, indent=4)
         with open(plaster_path, 'w') as json_file:
             json_file.write(json_obj)
+
+    def compute_total_duration(self):
+        """Compute total duration (seconds) as the sum of all day durations."""
+        total = 0.0
+        for day in self.days:
+            try:
+                total += float(getattr(day, "duration", 0.0) or 0.0)
+            except Exception:
+                continue
+        return total
     
