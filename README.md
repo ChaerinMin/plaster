@@ -40,4 +40,25 @@ source ~/anaconda3/bin/activate
 For more details, see the [official Anaconda documentation](https://docs.anaconda.com/anaconda/install/linux/).
 ```
 
+5. Setup a conda environment for this project
+```bash
+# create and activate an isolated environment
+conda create -n plaster python=3.11 -y
+conda activate plaster
+
+# tools needed
+conda install -c conda-forge pybind11 -y
+# If you don’t have a compiler:
+conda install -c conda-forge gxx_linux-64 -y
+```
+
+6. Build the timetree extension
+
+```
+python setup.py build_ext --inplace
+pip install -e .
+```
+
 ### Running `plaster`
+
+- First install `pybind`: `conda install -c conda-forge pybind`
