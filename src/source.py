@@ -4,6 +4,8 @@ import json
 from datetime import datetime
 from glob import glob
 
+SEQUENCE_THRESHOLD_S = 1.05 # How long before a sequence is split. Assuming no sensors captures at a rate of less than 1 FPS
+
 class SensorMetadata:
     """
     A class representing for a sensor.
@@ -173,8 +175,7 @@ class Sensor:
 
                 # print(f"Checking sequence continuity: {prev_metadata.timestamps[-1]} -> {curr_metadata.timestamps[0]}")
                 TIME_MULTIPLIER = 1e9 if self.time_stamp_units == "nanoseconds" else 1e6
-                TIME_THRESHOLD_S = 2
-                if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= TIME_THRESHOLD_S * TIME_MULTIPLIER:
+                if abs(curr_metadata.timestamps[0] - prev_metadata.timestamps[-1]) <= SEQUENCE_THRESHOLD_S * TIME_MULTIPLIER:
                     sequence.insert(self.metadata[ctr].name, curr_metadata)
                 else:
                     self.sequences.append(sequence)
@@ -451,7 +452,7 @@ class Source:
         if txt_file:
             with open(txt_file, 'r') as f:
                 first_line = f.readline().strip()
-                print(f"First line of {txt_file}: {first_line}")
+                # print(f"First line of {txt_file}: {first_line}")
                 # The format of the line is frame_<TIMESTAMP>[_<FRAMENUM>]. The last bit within [] is optional.
                 match = re.match(r'frame_(\d+)(?:_(\d+))?', first_line)
                 if match:
