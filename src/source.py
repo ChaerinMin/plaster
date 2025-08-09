@@ -447,7 +447,7 @@ class Day:
             except Exception:
                 # In case duration is malformed; skip
                 continue
-        print(f"Total duration for day {self.date}: {total} seconds")
+        # print(f"Total duration for day {self.date}: {total} seconds")
         return total
 
     def serialize(self, plaster_path):
