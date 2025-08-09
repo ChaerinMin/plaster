@@ -47,8 +47,11 @@ class SensorMetadata:
                             timestamp = int(match.group(1))
                             frame_num = int(match.group(2)) if match.group(2) else 0
                             additional_info = match.group(3) if match.group(3) else ""
-                            self.timestamps.append(timestamp)
-                            self.frame_nums.append(frame_num)
+                            if timestamp <= 0:
+                                print(f"WARNING: Invalid timestamp found in {self.metadata_file}. Skipping.")
+                            else:
+                                self.timestamps.append(timestamp)
+                                self.frame_nums.append(frame_num)
                         else:
                             print(f"Line '{line}' in {self.metadata_file} does not match expected format.")
                 # If no timestamps were found, mark as invalid
