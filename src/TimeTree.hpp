@@ -179,7 +179,7 @@ protected:
         {
             if (!loading)
             {
-                std::cout << "Can not open file: " << filename << std::endl;
+                std::cout << "ERROR: Cannot open file: " << filename << std::endl;
             }
             return nullptr;
         }
