@@ -443,6 +443,7 @@ class Day:
             except Exception:
                 # In case duration is malformed; skip
                 continue
+        print(f"Total duration for day {self.date}: {total} seconds")
         return total
 
     def serialize(self, plaster_path):
@@ -560,7 +561,6 @@ class Source:
         total = 0.0
         for day in self.days:
             try:
-                print(f"Adding duration for day {day.date}: {day.duration} seconds")
                 total += float(getattr(day, "duration", 0.0) or 0.0)
             except Exception:
                 continue
