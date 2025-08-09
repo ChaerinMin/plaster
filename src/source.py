@@ -38,14 +38,15 @@ class SensorMetadata:
         # print(f"Initializing SensorMetadata: {self.name} from {self.metadata_file}")
         if os.path.exists(self.metadata_file):
             with open(self.metadata_file, 'r') as file:
-                # Format is a txt file: frame_<TIMESTAMP>[_<FRAMENUM>]. The last bit within [] is optional.
+                # Format is a txt file: frame_<TIMESTAMP>[_<FRAMENUM> <ADDITIONAL_INFO>]. The last bits within [] are optional.
                 for line in file:
                     line = line.strip()
                     if line:
-                        match = re.match(r'frame_(\d+)(?:_(\d+))?', line)
+                        match = re.match(r'frame_(\d+)(?:_(\d+))?(?: \[(.*?)\])?', line)
                         if match:
                             timestamp = int(match.group(1))
                             frame_num = int(match.group(2)) if match.group(2) else 0
+                            additional_info = match.group(3) if match.group(3) else ""
                             self.timestamps.append(timestamp)
                             self.frame_nums.append(frame_num)
                         else:
@@ -483,8 +484,8 @@ class Source:
             with open(txt_file, 'r') as f:
                 first_line = f.readline().strip()
                 # print(f"First line of {txt_file}: {first_line}")
-                # The format of the line is frame_<TIMESTAMP>[_<FRAMENUM>]. The last bit within [] is optional.
-                match = re.match(r'frame_(\d+)(?:_(\d+))?', first_line)
+                # The format of the line is frame_<TIMESTAMP>[_<FRAMENUM> <ADDITIONAL_INFO>]. The last bits within [] is optional.
+                match = re.match(r'frame_(\d+)(?:_(\d+))?(?: \[(.*?)\])?', first_line)
                 if match:
                     start_time = match.group(1)
                     # Check number of digits in start_time which is time since some epoch
