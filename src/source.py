@@ -435,18 +435,52 @@ class Source:
     """
     A class representing the source of data, usually captured by a single BRICS rig (e.g., BRICS Mini, BRICS Studio).
     """
-    def __init__(self, path, force_reserialize=False, time_stamp_units="nanoseconds"):
+    def __init__(self, path, force_reserialize=False):
         self.name = os.path.basename(os.path.normpath(path))
         self.path = path
         print(f"Initializing Source: {self.name} at {self.path}")
         self.days = []
         self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.force_reserialize = force_reserialize
-        self.time_stamp_units = time_stamp_units
+
+        # Automatically find the timestamp units
+        self.time_stamp_units = "nanoseconds"
+        # Recursively find and get the first txt file in the source directory containing timestamp info
+        txt_file = self._find_first_txt_file(self.path)
+        # Read the first line of the txt file
+        if txt_file:
+            with open(txt_file, 'r') as f:
+                first_line = f.readline().strip()
+                print(f"First line of {txt_file}: {first_line}")
+                # The format of the line is frame_<TIMESTAMP>[_<FRAMENUM>]. The last bit within [] is optional.
+                match = re.match(r'frame_(\d+)(?:_(\d+))?', first_line)
+                if match:
+                    start_time = match.group(1)
+                    # Check number of digits in start_time which is time since some epoch
+                    if len(start_time) == 16:
+                        self.time_stamp_units = "microseconds"
+                        print(f"Detected timestamp units as microseconds from {txt_file}.")
+                    elif len(start_time) == 19:
+                        self.time_stamp_units = "nanoseconds"
+                        print(f"Detected timestamp units as nanoseconds from {txt_file}.")
+                    else:
+                        print(f"WARNING: Unrecognized timestamp format in {txt_file}. Defaulting to nanoseconds.")
+                else:
+                    print(f"WARNING: No valid timestamp found in {txt_file}. Defaulting to nanoseconds.")
+        else:
+            print(f"WARNING: No valid timestamp found in {txt_file}. Defaulting to nanoseconds.")
+
         if self.force_reserialize:
             print("Forcing reserialization of the source.")
 
         self.init()
+
+    def _find_first_txt_file(self, directory):
+        for root, dirs, files in os.walk(directory):
+            for filename in files:
+                if filename.endswith('.txt'):
+                    return os.path.join(root, filename)
+        return None
 
     def init(self):
         """
