@@ -49,7 +49,7 @@ public:
 
     TimeTree()
     {
-        std::cout << "Initialized empty TimeTree." << std::endl;
+        // std::cout << "Initialized empty TimeTree." << std::endl;
     }
 
     TimeTree(const std::string &filename)
@@ -85,7 +85,7 @@ public:
         std::ifstream in(binfile, std::ios::binary);
         if (!in.is_open())
             return nullptr;
-    auto tree = std::make_shared<TimeTree>();
+        auto tree = std::make_shared<TimeTree>();
         tree->m_root = load_node(in);
         return tree;
     }
