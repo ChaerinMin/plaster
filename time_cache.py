@@ -34,7 +34,10 @@ class TimeCache:
             self.time_tree = timetree_ext.TimeTree.load(self.time_tree_path)
         else:
             # If no tree exists, concat all txt timestamp files and create a new one
-            print('No existing time tree found (or it is empty), creating a new one.')
+            if self.force_recompute:
+                print('Force recompute flag is set, creating a new TimeTree.')
+            else:
+                print('No existing time tree found (or it is empty), creating a new one.')
             metadata_files = sorted(glob.glob(os.path.join(self.sensor_dir, "*.txt")))
             self.time_tree = timetree_ext.TimeTree()
             for metadata_path in metadata_files:
