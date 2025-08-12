@@ -1,9 +1,4 @@
-try:
-    # When built in-place, the compiled module is timetree/timetree*.so
-    from timetree import timetree as timetree_ext
-except Exception:
-    # If installed as a top-level extension
-    import timetree as timetree_ext
+import timetree as timetree_ext
 import os
 import glob
 from source import SensorMetadata
