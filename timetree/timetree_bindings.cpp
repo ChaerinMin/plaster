@@ -32,8 +32,8 @@ PYBIND11_MODULE(timetree, m) {
         ;
 
     py::class_<TimeTree, std::shared_ptr<TimeTree>>(m, "TimeTree")
-       .def(py::init([](){ return std::make_shared<TimeTree>(std::string("")); }),
-           "Construct an empty TimeTree (no file loaded).")
+        .def(py::init<>(),
+             "Construct an empty TimeTree (no file loaded).")
        .def(py::init<const std::string&>(),
            py::arg("filename"),
            "Construct a TimeTree from a metadata file (lines: prefix_timestamp_frame).")
@@ -50,16 +50,20 @@ PYBIND11_MODULE(timetree, m) {
         // Expose build/append helpers from the header (protected there) via accessor on this instance
         .def("buildAVLTree", [](TimeTree &self, const std::string &timestamp_filepath, std::shared_ptr<TimeNode> root) {
             struct Accessor : TimeTree { using TimeTree::TimeTree; using TimeTree::buildAVLTree; };
-            Accessor acc("");
-            return acc.buildAVLTree(timestamp_filepath, root);
+            Accessor acc;
+            auto new_root = acc.buildAVLTree(timestamp_filepath, root);
+            if (!root) self.m_root = new_root; // if building fresh, set as self root
+            return new_root;
         }, py::arg("timestamp_filepath"), py::arg("root") = nullptr,
            py::return_value_policy::reference,
            "Build an AVL tree from a timestamp file (optionally from an existing root); returns the root.")
         .def("appendAVLTree", [](TimeTree &self, const std::string &timestamp_filepath) {
             struct Accessor : TimeTree { using TimeTree::TimeTree; using TimeTree::appendAVLTree; };
-            Accessor acc("");
+            Accessor acc;
             acc.m_root = self.m_root;
-            return acc.appendAVLTree(timestamp_filepath);
+            auto root = acc.appendAVLTree(timestamp_filepath);
+            self.m_root = root;
+            return root;
         }, py::arg("timestamp_filepath"),
            py::return_value_policy::reference,
            "Append entries from a timestamp file into the existing AVL tree; returns the root.")

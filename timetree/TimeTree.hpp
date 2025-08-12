@@ -67,7 +67,7 @@ public:
         std::ifstream in(binfile, std::ios::binary);
         if (!in.is_open())
             return nullptr;
-        auto tree = std::make_shared<TimeTree>("", true);
+    auto tree = std::make_shared<TimeTree>();
         tree->m_root = load_node(in);
         return tree;
     }
