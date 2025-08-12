@@ -204,6 +204,7 @@ protected:
 
         while (getline(file, line))
         {
+            std::cout << line << std::endl;
             std::istringstream iss(line);
             std::string prefix, timestamp_str, frameidx;
             if (std::getline(iss, prefix, '_') &&
