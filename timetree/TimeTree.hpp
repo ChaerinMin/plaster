@@ -123,7 +123,6 @@ public:
         std::string line;
         while (getline(file, line))
         {
-            std::cout << "Processing line: " << line << std::endl;
             std::istringstream iss(line);
             std::string prefix, timestamp_str, frameidx;
             if (std::getline(iss, prefix, '_') &&
