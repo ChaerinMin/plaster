@@ -179,7 +179,7 @@ public:
                 continue;
             }
 
-            int64_t timestamp = std::stoll(timestamp_str);
+            timestamp = std::stoll(timestamp_str);
             root = insert(root, timestamp, frameidx);
         }
 
