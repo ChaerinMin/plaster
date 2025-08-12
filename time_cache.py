@@ -44,6 +44,7 @@ class TimeCache:
                 self.time_tree.appendAVLTree(metadata_path)
 
             self.time_tree.save(self.time_tree_path)
+            print(f"Created new TimeTree and saved to {TIMETREE_FILENAME}")
 
         self.print_stats()
 
