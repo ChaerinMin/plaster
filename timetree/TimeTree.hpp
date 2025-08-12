@@ -10,6 +10,24 @@
 #include <cstdint>
 #include <memory>
 
+inline std::vector<std::string> &tokenize(const std::string &s, char delim, std::vector<std::string> &elems)
+{
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim))
+    {
+        elems.push_back(item);
+    }
+    return elems;
+};
+
+inline std::vector<std::string> tokenize(const std::string &s, char delim)
+{
+    std::vector<std::string> elems;
+    tokenize(s, delim, elems);
+    return elems;
+};
+
 
 class TimeNode
 {
@@ -130,11 +148,11 @@ public:
 
             // Line format is frame_<TIMESTAMP>[_<FRAMEIDX> <ADD_INFO>]
             // First split based on space and get tokens
-            auto space_split = line.substr(0, line.find(' '));
+            auto space_split = tokenize(line, ' ');
             bool fail = true;
             if(space_split.size() >= 1)
             {
-                auto und_split = space_split[0].substr(space_split[0].find('_'));
+                auto und_split = tokenize(space_split[0], '_');
                 if(und_split.size() >= 2)
                 {
                     timestamp_str = und_split[1];
