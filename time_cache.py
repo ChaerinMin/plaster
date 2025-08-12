@@ -12,9 +12,10 @@ from source import SensorMetadata
 TIMETREE_FILENAME = 'plaster.timetree'
 
 class TimeCache:
-    def __init__(self, sensor_dir):
+    def __init__(self, sensor_dir, force_recompute=False):
         self.sensor_dir = sensor_dir
         self.time_tree = None
+        self.force_recompute = force_recompute
         self.init()
 
     def print_stats(self):
@@ -27,7 +28,7 @@ class TimeCache:
     def init(self):
         # First check if a pre-built timetree exists
         self.time_tree_path = os.path.join(self.sensor_dir, TIMETREE_FILENAME)
-        if os.path.exists(self.time_tree_path) and os.path.getsize(self.time_tree_path) > 0:
+        if os.path.exists(self.time_tree_path) and os.path.getsize(self.time_tree_path) > 0 or self.force_recompute == False:
             print(f"Loaded existing TimeTree from {TIMETREE_FILENAME}")
             # static method on the class
             self.time_tree = timetree_ext.TimeTree.load(self.time_tree_path)
@@ -49,10 +50,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialize TimeCache for a sensor directory.")
     parser.add_argument("-d", "--sensor-dir", type=str, required=True, help="Path to the sensor directory")
     parser.add_argument("-t", "--timestamp", type=int, required=True, help="Timestamp to retrieve from the TimeTree")
-    parser.add_argument("-th", "--threshold", type=int, default=1000, help="Threshold for timestamp retrieval (in same units as timestamp)")
+    parser.add_argument("-mt", "--max_threshold", type=int, default=1000, help="Threshold for timestamp retrieval (in same units as timestamp)")
+    # Force tree recomputation
+    parser.add_argument("-f", "--force-recompute", action="store_true", help="Force recomputation of the TimeTree")
 
     args = parser.parse_args()
-    time_cache_instance = TimeCache(args.sensor_dir)
+    time_cache_instance = TimeCache(args.sensor_dir, force_recompute=args.force_recompute)
     # Try finding a node
-    node_details = time_cache_instance.time_tree.get(args.timestamp, threshold=args.threshold)
+    node_details = time_cache_instance.time_tree.get(args.timestamp, threshold=args.max_threshold)
     print(f"Node details for timestamp {args.timestamp}: {node_details}")
