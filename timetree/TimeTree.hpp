@@ -193,6 +193,7 @@ protected:
 
     std::shared_ptr<TimeNode> buildAVLTree(const std::string &timestamp_filepath, std::shared_ptr<TimeNode> root = nullptr)
     {
+        std::cout << "Building AVLtree from " << timestamp_filepath << std::endl;
         std::ifstream file(timestamp_filepath);
         if (!file.is_open())
         {
@@ -201,10 +202,8 @@ protected:
         }
 
         std::string line;
-
         while (getline(file, line))
         {
-            std::cout << line << std::endl;
             std::istringstream iss(line);
             std::string prefix, timestamp_str, frameidx;
             if (std::getline(iss, prefix, '_') &&
