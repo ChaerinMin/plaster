@@ -10,7 +10,6 @@ parser.add_argument("-f", "--force-reserialize", action="store_true", help="Forc
 if __name__ == "__main__":
     args = parser.parse_args()
     if not args.source:
-        print("Source directory is required. Use -s or --source to specify it.")
         parser.print_help()
         exit(1)
 
@@ -21,6 +20,4 @@ if __name__ == "__main__":
     for (day_dir, day) in zip(day_dirs, source_instance.days):
         sensor_dirs = [os.path.join(day_dir, sensor.path) for sensor in day.sensors]
         for sensor_dir in sensor_dirs:
-            print(sensor_dir)
-            # time_cache_instance = TimeCache(sensor_dir, force_recompute=args.force_reserialize)
-            # time_cache_instance.process()
+            time_cache_instance = TimeCache(sensor_dir, force_recompute=args.force_reserialize)
