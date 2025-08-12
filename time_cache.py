@@ -29,9 +29,9 @@ class TimeCache:
         # If no tree exists, concat all txt timestamp files and create a new one
         print('No existing time tree found (or it is empty), creating a new one.')
         metadata_files = sorted(glob.glob(os.path.join(self.sensor_dir, "*.txt")))
-        print('Found metadata files:', metadata_files)
         self.time_tree = timetree_ext.TimeTree()
         for metadata_path in metadata_files:
+            print(metadata_path)
             self.time_tree.appendAVLTree(metadata_path)
 
         self.time_tree.save(self.time_tree_path)
