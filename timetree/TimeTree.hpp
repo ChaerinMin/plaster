@@ -188,7 +188,7 @@ protected:
 
     std::shared_ptr<TimeNode> appendAVLTree(const std::string &timestamp_filepath)
     {
-        return buildAVLTree(timestamp_filepath, m_root);
+        m_root = buildAVLTree(timestamp_filepath, m_root);
     }
 
     std::shared_ptr<TimeNode> buildAVLTree(const std::string &timestamp_filepath, std::shared_ptr<TimeNode> root = nullptr)
