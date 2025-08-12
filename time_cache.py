@@ -42,15 +42,16 @@ class TimeCache:
             self.time_tree.save(self.time_tree_path)
 
         self.print_stats()
-        # Try finding a node
-        node_details = self.time_tree.get(1436376767246815604)
-        print(f"Node details for timestamp 1436376767246815604: {node_details}")
 
 import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialize TimeCache for a sensor directory.")
     parser.add_argument("-d", "--sensor-dir", type=str, required=True, help="Path to the sensor directory")
+    parser.add_argument("-t", "--timestamp", type=int, required=True, help="Timestamp to retrieve from the TimeTree")
 
     args = parser.parse_args()
     time_cache_instance = TimeCache(args.sensor_dir)
+    # Try finding a node
+    node_details = time_cache_instance.time_tree.get(args.timestamp)
+    print(f"Node details for timestamp {args.timestamp}: {node_details}")
