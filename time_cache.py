@@ -43,7 +43,8 @@ class TimeCache:
 
         self.print_stats()
         # Try finding a node
-        self.time_tree.get(1436376767246815604)
+        node_details = self.time_tree.get(1436376767246815604)
+        print(f"Node details for timestamp 1436376767246815604: {node_details}")
 
 import argparse
 
