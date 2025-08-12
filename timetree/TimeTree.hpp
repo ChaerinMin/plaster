@@ -124,18 +124,36 @@ public:
         while (getline(file, line))
         {
             std::istringstream iss(line);
-            std::string prefix, timestamp_str, frameidx;
+            std::string prefix, timestamp_str;
+            std::string frameidx, addinfo;
             std::cout << "Processing line: " << line << std::endl;
 
-            if (std::getline(iss, prefix, '_') &&
-                std::getline(iss, timestamp_str, '_') &&
-                std::getline(iss, frameidx))
+            // Line format is frame_<TIMESTAMP>[_<FRAMEIDX> <ADD_INFO>]
+            // First split based on space and get tokens
+            auto space_split = line.substr(0, line.find(' '));
+            bool fail = true;
+            if(space_split.size() >= 1)
             {
-                int64_t timestamp = std::stoll(timestamp_str);
-                root = insert(root, timestamp, frameidx);
+                auto und_split = space_split[0].substr(space_split[0].find('_'));
+                if(und_split.size() >= 2)
+                {
+                    timestamp_str = und_split[1];
+                    if(und_split.size() >= 3)
+                        frameidx = und_split[2];
+                    fail = false;
+                }
+                if(space_split.size() >= 2)
+                    addinfo = space_split[1];
             }
-            else
+
+            if(fail)
+            {
                 std::cout << "Skipping malformed line: " << line << std::endl;
+                continue;
+            }
+
+            int64_t timestamp = std::stoll(timestamp_str);
+            root = insert(root, timestamp, frameidx);
         }
 
         return root;
