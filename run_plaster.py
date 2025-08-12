@@ -9,6 +9,9 @@ parser.add_argument("-f", "--force-reserialize", action="store_true", help="Forc
 
 if __name__ == "__main__":
     args = parser.parse_args()
+    if not args.source:
+        print("Source directory is required. Use -s or --source to specify it.")
+        exit(1)
 
     source_instance = source.Source(args.source, force_reserialize=args.force_reserialize)
 
