@@ -33,6 +33,12 @@ class TimeCache:
         for metadata_path in metadata_files:
             self.time_tree.appendAVLTree(metadata_path)
 
+        # Print tree stats
+        print("TimeTree statistics:")
+        print(f" - Total nodes: {self.time_tree.getTotalNodes(self.time_tree.m_root)}")
+        print(f" - Leaf nodes: {self.time_tree.countLeafNodes(self.time_tree.m_root)}")
+        print(f" - Tree depth: {self.time_tree.getTreeDepth(self.time_tree.m_root)}")
+
         self.time_tree.save(self.time_tree_path)
 
 import argparse
