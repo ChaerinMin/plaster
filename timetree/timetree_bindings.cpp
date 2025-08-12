@@ -47,24 +47,13 @@ PYBIND11_MODULE(timetree, m) {
             return node_to_dict(self->get(ts, threshold));
         }, py::arg("timestamp"), py::arg("threshold") = 1000,
         "Find closest node; returns dict with timestamp/arb_info or None.")
-        // Expose build/append helpers from the header (protected there) via accessor on this instance
-        .def("buildAVLTree", [](TimeTree &self, const std::string &timestamp_filepath, std::shared_ptr<TimeNode> root) {
-            struct Accessor : TimeTree { using TimeTree::TimeTree; using TimeTree::buildAVLTree; };
-            Accessor acc;
-            auto new_root = acc.buildAVLTree(timestamp_filepath, root);
-            if (!root) self.m_root = new_root; // if building fresh, set as self root
-            return new_root;
-        }, py::arg("timestamp_filepath"), py::arg("root") = nullptr,
+       // Expose public build/append helpers directly
+       .def("buildAVLTree", &TimeTree::buildAVLTree,
+           py::arg("timestamp_filepath"), py::arg("root") = nullptr,
            py::return_value_policy::reference,
            "Build an AVL tree from a timestamp file (optionally from an existing root); returns the root.")
-        .def("appendAVLTree", [](TimeTree &self, const std::string &timestamp_filepath) {
-            struct Accessor : TimeTree { using TimeTree::TimeTree; using TimeTree::appendAVLTree; };
-            Accessor acc;
-            acc.m_root = self.m_root;
-            auto root = acc.appendAVLTree(timestamp_filepath);
-            self.m_root = root;
-            return root;
-        }, py::arg("timestamp_filepath"),
+       .def("appendAVLTree", &TimeTree::appendAVLTree,
+           py::arg("timestamp_filepath"),
            py::return_value_policy::reference,
            "Append entries from a timestamp file into the existing AVL tree; returns the root.")
         .def_property_readonly("root", [](TimeTree& self){ return self.m_root; })

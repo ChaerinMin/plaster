@@ -105,6 +105,39 @@ public:
         return 1 + getTotalNodes(node->left) + getTotalNodes(node->right);
     }
 
+    std::shared_ptr<TimeNode> appendAVLTree(const std::string &timestamp_filepath)
+    {
+        std::cout << "Appending to AVLtree from " << timestamp_filepath << std::endl;
+        m_root = buildAVLTree(timestamp_filepath, m_root);
+    }
+
+    std::shared_ptr<TimeNode> buildAVLTree(const std::string &timestamp_filepath, std::shared_ptr<TimeNode> root = nullptr)
+    {
+        std::cout << "Building AVLtree from " << timestamp_filepath << std::endl;
+        std::ifstream file(timestamp_filepath);
+        if (!file.is_open())
+        {
+            std::cout << "ERROR: Cannot open file: " << timestamp_filepath << std::endl;
+            return nullptr;
+        }
+
+        std::string line;
+        while (getline(file, line))
+        {
+            std::istringstream iss(line);
+            std::string prefix, timestamp_str, frameidx;
+            if (std::getline(iss, prefix, '_') &&
+                std::getline(iss, timestamp_str, '_') &&
+                std::getline(iss, frameidx))
+            {
+                int64_t timestamp = std::stoll(timestamp_str);
+                root = insert(root, timestamp, frameidx);
+            }
+        }
+
+        return root;
+    }    
+
 protected:
     std::shared_ptr<TimeNode> rotateRight(std::shared_ptr<TimeNode> y)
     {
@@ -184,39 +217,6 @@ protected:
         }
 
         return (closest && minDiff <= threshold) ? closest : nullptr;
-    }
-
-    std::shared_ptr<TimeNode> appendAVLTree(const std::string &timestamp_filepath)
-    {
-        std::cout << "Appending to AVLtree from " << timestamp_filepath << std::endl;
-        m_root = buildAVLTree(timestamp_filepath, m_root);
-    }
-
-    std::shared_ptr<TimeNode> buildAVLTree(const std::string &timestamp_filepath, std::shared_ptr<TimeNode> root = nullptr)
-    {
-        std::cout << "Building AVLtree from " << timestamp_filepath << std::endl;
-        std::ifstream file(timestamp_filepath);
-        if (!file.is_open())
-        {
-            std::cout << "ERROR: Cannot open file: " << timestamp_filepath << std::endl;
-            return nullptr;
-        }
-
-        std::string line;
-        while (getline(file, line))
-        {
-            std::istringstream iss(line);
-            std::string prefix, timestamp_str, frameidx;
-            if (std::getline(iss, prefix, '_') &&
-                std::getline(iss, timestamp_str, '_') &&
-                std::getline(iss, frameidx))
-            {
-                int64_t timestamp = std::stoll(timestamp_str);
-                root = insert(root, timestamp, frameidx);
-            }
-        }
-
-        return root;
     }
 
     static void save_node(std::ofstream &out, const std::shared_ptr<TimeNode> &node)

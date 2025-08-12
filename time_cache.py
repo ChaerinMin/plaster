@@ -31,7 +31,6 @@ class TimeCache:
         metadata_files = sorted(glob.glob(os.path.join(self.sensor_dir, "*.txt")))
         self.time_tree = timetree_ext.TimeTree()
         for metadata_path in metadata_files:
-            print(metadata_path)
             self.time_tree.appendAVLTree(metadata_path)
 
         self.time_tree.save(self.time_tree_path)
