@@ -17,30 +17,17 @@ The typical workflow is to have a standalone machine (e.g., on AWS or GCP) run `
 
 ### Install Anaconda
 
-1. Download the Anaconda installer script:
+- Download the Anaconda installer script:
 
 ```bash
 wget https://repo.anaconda.com/archive/Anaconda3-latest-Linux-x86_64.sh
-```
-
-2. Run the installer:
-
-```bash
 bash Anaconda3-latest-Linux-x86_64.sh
-```
-
-3. Follow the prompts to complete installation.
-
-4. Activate Anaconda:
-
-```bash
 source ~/anaconda3/bin/activate
 ```
 
 For more details, see the [official Anaconda documentation](https://docs.anaconda.com/anaconda/install/linux/).
-```
 
-5. Setup a conda environment for this project
+- Setup a conda environment for this project
 ```bash
 # create and activate an isolated environment
 conda create -n plaster python=3.11 -y
@@ -55,8 +42,11 @@ conda install -c conda-forge gxx_linux-64 -y
 6. Build the timetree extension
 
 ```
+cd timetree
 python setup.py build_ext --inplace
 pip install -e .
+# Optionally, test
+python -c "import timetree; print('timetree OK')"
 ```
 
 ### Running `plaster`

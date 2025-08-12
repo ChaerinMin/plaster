@@ -15,23 +15,37 @@ class TimeNode
 {
 public:
     int64_t timestamp;
-    std::string frameidx;
+    std::string arbitrary_node_info;
     std::shared_ptr<TimeNode> left;
     std::shared_ptr<TimeNode> right;
     int height;
 
-    TimeNode(int64_t t, const std::string &idx)
-        : timestamp(t), frameidx(idx), left(nullptr), right(nullptr), height(1) {}
+    TimeNode(int64_t t, const std::string &info)
+        : timestamp(t), arbitrary_node_info(info), left(nullptr), right(nullptr), height(1) {}
 };
 
 class TimeTree
 {
 public:
-    std::shared_ptr<TimeNode> m_root;
+    std::shared_ptr<TimeNode> m_root = nullptr;
 
-    TimeTree(const std::string &filename, const bool loading = false)
+    TimeTree()
     {
-        m_root = buildAVLTree(filename, loading);
+        
+    }
+
+    TimeTree(const std::string &filename)
+    {
+        // Check if filename is a binary
+        std::ifstream in(filename, std::ios::binary);
+        if (in.is_open())
+        {
+            this->load(filename);
+            return;
+        }
+
+        // Files are txt files, so let's build the tree from scratch
+        m_root = buildAVLTree(filename);
     }
 
     std::shared_ptr<TimeNode> get(int64_t timestamp, int64_t threshold = 1000)
@@ -172,19 +186,20 @@ protected:
         return (closest && minDiff <= threshold) ? closest : nullptr;
     }
 
-    std::shared_ptr<TimeNode> buildAVLTree(const std::string &filename, const bool loading)
+    std::shared_ptr<TimeNode> appendAVLTree(const std::string &timestamp_filepath)
     {
-        std::ifstream file(filename);
+        return buildAVLTree(timestamp_filepath, m_root);
+    }
+
+    std::shared_ptr<TimeNode> buildAVLTree(const std::string &timestamp_filepath, std::shared_ptr<TimeNode> root = nullptr)
+    {
+        std::ifstream file(timestamp_filepath);
         if (!file.is_open())
         {
-            if (!loading)
-            {
-                std::cout << "ERROR: Cannot open file: " << filename << std::endl;
-            }
+            std::cout << "ERROR: Cannot open file: " << timestamp_filepath << std::endl;
             return nullptr;
         }
 
-        std::shared_ptr<TimeNode> root = nullptr;
         std::string line;
 
         while (getline(file, line))

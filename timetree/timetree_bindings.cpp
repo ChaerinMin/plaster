@@ -32,9 +32,11 @@ PYBIND11_MODULE(timetree, m) {
         ;
 
     py::class_<TimeTree, std::shared_ptr<TimeTree>>(m, "TimeTree")
-        .def(py::init<const std::string&, const bool>(),
-             py::arg("filename"), py::arg("loading") = false,
-             "Construct a TimeTree from a metadata file (lines: prefix_timestamp_frame).")
+       .def(py::init([](){ return std::make_shared<TimeTree>(std::string("")); }),
+           "Construct an empty TimeTree (no file loaded).")
+       .def(py::init<const std::string&>(),
+           py::arg("filename"),
+           "Construct a TimeTree from a metadata file (lines: prefix_timestamp_frame).")
         .def_static("load", &TimeTree::load, py::arg("binfile"),
                     "Load a serialized TimeTree from a binary file.")
         .def("save", &TimeTree::save, py::arg("binfile"),
@@ -45,6 +47,22 @@ PYBIND11_MODULE(timetree, m) {
             return node_to_dict(self->get(ts, threshold));
         }, py::arg("timestamp"), py::arg("threshold") = 1000,
         "Find closest node; returns dict with timestamp/frameidx or None.")
+        // Expose build/append helpers from the header (protected there) via accessor on this instance
+        .def("buildAVLTree", [](TimeTree &self, const std::string &timestamp_filepath, std::shared_ptr<TimeNode> root) {
+            struct Accessor : TimeTree { using TimeTree::TimeTree; using TimeTree::buildAVLTree; };
+            Accessor acc("");
+            return acc.buildAVLTree(timestamp_filepath, root);
+        }, py::arg("timestamp_filepath"), py::arg("root") = nullptr,
+           py::return_value_policy::reference,
+           "Build an AVL tree from a timestamp file (optionally from an existing root); returns the root.")
+        .def("appendAVLTree", [](TimeTree &self, const std::string &timestamp_filepath) {
+            struct Accessor : TimeTree { using TimeTree::TimeTree; using TimeTree::appendAVLTree; };
+            Accessor acc("");
+            acc.m_root = self.m_root;
+            return acc.appendAVLTree(timestamp_filepath);
+        }, py::arg("timestamp_filepath"),
+           py::return_value_policy::reference,
+           "Append entries from a timestamp file into the existing AVL tree; returns the root.")
         .def_property_readonly("root", [](TimeTree& self){ return self.m_root; })
         .def("height", [](TimeTree& self){ return self.getTreeDepth(self.m_root); })
         .def("nodes", [](TimeTree& self){ return self.getTotalNodes(self.m_root); })
