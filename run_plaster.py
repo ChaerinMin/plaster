@@ -11,6 +11,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if not args.source:
         print("Source directory is required. Use -s or --source to specify it.")
+        parser.print_help()
         exit(1)
 
     source_instance = source.Source(args.source, force_reserialize=args.force_reserialize)
