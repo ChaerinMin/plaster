@@ -20,13 +20,14 @@ class TimeCache:
     def init(self):
         # First check if a pre-built timetree exists
         self.time_tree_path = os.path.join(self.sensor_dir, TIMETREE_FILENAME)
-        if os.path.exists(self.time_tree_path):
+        if os.path.exists(self.time_tree_path) or os.path.getsize(self.time_tree_path) > 0:
             print(f"Loaded existing TimeTree from {TIMETREE_FILENAME}")
             # static method on the class
             self.time_tree = timetree_ext.TimeTree.load(self.time_tree_path)
             return
 
         # If no tree exists, concat all txt timestamp files and create a new one
+        print('No existing time tree found (or it is empty), creating a new one.')
         metadata_files = glob.glob(os.path.join(self.sensor_dir, "*.txt"))
         self.time_tree = timetree_ext.TimeTree()
         for metadata_path in metadata_files:
