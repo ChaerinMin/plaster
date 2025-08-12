@@ -1,4 +1,4 @@
-import timetree
+from timetree import timetree
 import os
 import glob
 from source import SensorMetadata
