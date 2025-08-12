@@ -144,6 +144,7 @@ public:
         {
             std::istringstream iss(line);
             std::string prefix, timestamp_str;
+            int64_t timestamp = 0;
             std::string frameidx, addinfo;
             // std::cout << "Processing line: " << line << std::endl;
 
@@ -157,9 +158,16 @@ public:
                 if(und_split.size() >= 2)
                 {
                     timestamp_str = und_split[1];
+                    timestamp = std::stoll(timestamp_str);
                     if(und_split.size() >= 3)
                         frameidx = und_split[2];
-                    fail = false;
+                    
+                    if(timestamp <= 0)
+                    {
+                        std::cout << "Invalid timestamp found: " << timestamp << std::endl;
+                    }
+                    else
+                        fail = false;
                 }
                 if(space_split.size() >= 2)
                     addinfo = space_split[1];

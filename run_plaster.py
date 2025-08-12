@@ -1,6 +1,7 @@
 import source
 import argparse
-import time_cache
+from time_cache import TimeCache
+import os
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
 parser.add_argument("-s", "--source", type=str, help="Path to the source directory")
@@ -11,4 +12,11 @@ if __name__ == "__main__":
 
     source_instance = source.Source(args.source, force_reserialize=args.force_reserialize)
 
-    # time_cache_instance = 
+    # Recursively find all sensor directories in source-->day-->sensor. Then run time_cache
+    day_dirs = [os.path.join(day.source_path, day.date) for day in source_instance.days]
+    for (day_dir, day) in zip(day_dirs, source_instance.days):
+        sensor_dirs = [os.path.join(day_dir, sensor.path) for sensor in day.sensors]
+        for sensor_dir in sensor_dirs:
+            print(sensor_dir)
+            # time_cache_instance = TimeCache(sensor_dir, force_recompute=args.force_reserialize)
+            # time_cache_instance.process()
