@@ -31,7 +31,7 @@ public:
 
     TimeTree()
     {
-        
+
     }
 
     TimeTree(const std::string &filename)
@@ -224,9 +224,9 @@ protected:
             return;
 
         out.write(reinterpret_cast<const char *>(&node->timestamp), sizeof(int64_t));
-        size_t len = node->frameidx.size();
+        size_t len = node->arbitrary_node_info.size();
         out.write(reinterpret_cast<const char *>(&len), sizeof(size_t));
-        out.write(node->frameidx.data(), len);
+        out.write(node->arbitrary_node_info.data(), len);
 
         bool has_left = node->left != nullptr;
         bool has_right = node->right != nullptr;
