@@ -144,7 +144,7 @@ public:
             std::istringstream iss(line);
             std::string prefix, timestamp_str;
             std::string frameidx, addinfo;
-            std::cout << "Processing line: " << line << std::endl;
+            // std::cout << "Processing line: " << line << std::endl;
 
             // Line format is frame_<TIMESTAMP>[_<FRAMEIDX> <ADD_INFO>]
             // First split based on space and get tokens

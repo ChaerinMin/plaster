@@ -17,6 +17,13 @@ class TimeCache:
         self.time_tree = None
         self.init()
 
+    def print_stats(self):
+        # Print tree stats
+        print("TimeTree statistics:")
+        print(f" - Total nodes: {self.time_tree.getTotalNodes()}")
+        print(f" - Leaf nodes: {self.time_tree.countLeafNodes()}")
+        print(f" - Tree depth: {self.time_tree.getTreeDepth()}")
+
     def init(self):
         # First check if a pre-built timetree exists
         self.time_tree_path = os.path.join(self.sensor_dir, TIMETREE_FILENAME)
@@ -24,6 +31,7 @@ class TimeCache:
             print(f"Loaded existing TimeTree from {TIMETREE_FILENAME}")
             # static method on the class
             self.time_tree = timetree_ext.TimeTree.load(self.time_tree_path)
+            self.print_stats()
             return
 
         # If no tree exists, concat all txt timestamp files and create a new one
@@ -33,13 +41,8 @@ class TimeCache:
         for metadata_path in metadata_files:
             self.time_tree.appendAVLTree(metadata_path)
 
-        # Print tree stats
-        print("TimeTree statistics:")
-        print(f" - Total nodes: {self.time_tree.getTotalNodes()}")
-        print(f" - Leaf nodes: {self.time_tree.countLeafNodes()}")
-        print(f" - Tree depth: {self.time_tree.getTreeDepth()}")
-
         self.time_tree.save(self.time_tree_path)
+        self.print_stats()
 
 import argparse
 
