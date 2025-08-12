@@ -31,7 +31,7 @@ public:
 
     TimeTree()
     {
-
+        std::cout << "Initialized empty TimeTree." << std::endl;
     }
 
     TimeTree(const std::string &filename)
