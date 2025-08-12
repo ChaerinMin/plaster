@@ -28,7 +28,7 @@ class TimeCache:
     def init(self):
         # First check if a pre-built timetree exists
         self.time_tree_path = os.path.join(self.sensor_dir, TIMETREE_FILENAME)
-        if os.path.exists(self.time_tree_path) and os.path.getsize(self.time_tree_path) > 0 or self.force_recompute == False:
+        if (os.path.exists(self.time_tree_path) and os.path.getsize(self.time_tree_path) > 0) and self.force_recompute == False:
             print(f"Loaded existing TimeTree from {TIMETREE_FILENAME}")
             # static method on the class
             self.time_tree = timetree_ext.TimeTree.load(self.time_tree_path)
