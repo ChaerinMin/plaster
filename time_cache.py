@@ -49,9 +49,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialize TimeCache for a sensor directory.")
     parser.add_argument("-d", "--sensor-dir", type=str, required=True, help="Path to the sensor directory")
     parser.add_argument("-t", "--timestamp", type=int, required=True, help="Timestamp to retrieve from the TimeTree")
+    parser.add_argument("-th", "--threshold", type=int, default=1000, help="Threshold for timestamp retrieval (in same units as timestamp)")
 
     args = parser.parse_args()
     time_cache_instance = TimeCache(args.sensor_dir)
     # Try finding a node
-    node_details = time_cache_instance.time_tree.get(args.timestamp)
+    node_details = time_cache_instance.time_tree.get(args.timestamp, threshold=args.threshold)
     print(f"Node details for timestamp {args.timestamp}: {node_details}")
