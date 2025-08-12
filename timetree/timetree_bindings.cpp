@@ -12,7 +12,7 @@ static py::object node_to_dict(const std::shared_ptr<TimeNode>& n) {
     if (!n) return py::none();
     py::dict d;
     d["timestamp"] = n->timestamp;
-    d["frameidx"] = n->frameidx;
+    d["arbitrary_node_info"] = n->arbitrary_node_info;
     d["height"] = n->height;
     // Expose child presence only (avoid deep recursion by default)
     d["has_left"] = static_cast<bool>(n->left);
@@ -25,7 +25,7 @@ PYBIND11_MODULE(timetree, m) {
 
     py::class_<TimeNode, std::shared_ptr<TimeNode>>(m, "TimeNode")
         .def_property_readonly("timestamp", [](const TimeNode& self){ return self.timestamp; })
-        .def_property_readonly("frameidx", [](const TimeNode& self){ return self.frameidx; })
+        .def_property_readonly("arbitrary_node_info", [](const TimeNode& self){ return self.arbitrary_node_info; })
         .def_property_readonly("height", [](const TimeNode& self){ return self.height; })
         .def_property_readonly("left", [](const TimeNode& self){ return self.left; })
         .def_property_readonly("right", [](const TimeNode& self){ return self.right; })
@@ -46,7 +46,7 @@ PYBIND11_MODULE(timetree, m) {
         .def("get", [](std::shared_ptr<TimeTree> self, std::int64_t ts, std::int64_t threshold){
             return node_to_dict(self->get(ts, threshold));
         }, py::arg("timestamp"), py::arg("threshold") = 1000,
-        "Find closest node; returns dict with timestamp/frameidx or None.")
+        "Find closest node; returns dict with timestamp/arb_info or None.")
         // Expose build/append helpers from the header (protected there) via accessor on this instance
         .def("buildAVLTree", [](TimeTree &self, const std::string &timestamp_filepath, std::shared_ptr<TimeNode> root) {
             struct Accessor : TimeTree { using TimeTree::TimeTree; using TimeTree::buildAVLTree; };
