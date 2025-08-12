@@ -125,6 +125,8 @@ public:
         {
             std::istringstream iss(line);
             std::string prefix, timestamp_str, frameidx;
+            std::cout << "Processing line: " << line << std::endl;
+
             if (std::getline(iss, prefix, '_') &&
                 std::getline(iss, timestamp_str, '_') &&
                 std::getline(iss, frameidx))
@@ -132,6 +134,8 @@ public:
                 int64_t timestamp = std::stoll(timestamp_str);
                 root = insert(root, timestamp, frameidx);
             }
+            else
+                std::cout << "Skipping malformed line: " << line << std::endl;
         }
 
         return root;
