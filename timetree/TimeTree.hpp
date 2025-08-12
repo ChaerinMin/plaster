@@ -66,8 +66,9 @@ public:
         m_root = buildAVLTree(filename);
     }
 
-    std::shared_ptr<TimeNode> get(int64_t timestamp, int64_t threshold = 1000)
+    std::shared_ptr<TimeNode> get(int64_t timestamp, int64_t threshold)
     {
+        // NOTE: threshold must be in the same units as timestamp
         return findClosest(m_root, timestamp, threshold);
     }
 

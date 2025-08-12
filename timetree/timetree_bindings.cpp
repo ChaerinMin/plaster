@@ -41,11 +41,11 @@ PYBIND11_MODULE(timetree, m) {
                     "Load a serialized TimeTree from a binary file.")
         .def("save", &TimeTree::save, py::arg("binfile"),
              "Serialize the TimeTree to a binary file.")
-        .def("get_raw", &TimeTree::get, py::arg("timestamp"), py::arg("threshold") = 1000,
+        .def("get_raw", &TimeTree::get, py::arg("timestamp"), py::arg("threshold"),
              py::return_value_policy::reference, "Find closest node (returns TimeNode or None).")
         .def("get", [](std::shared_ptr<TimeTree> self, std::int64_t ts, std::int64_t threshold){
             return node_to_dict(self->get(ts, threshold));
-        }, py::arg("timestamp"), py::arg("threshold") = 1000,
+        }, py::arg("timestamp"), py::arg("threshold"),
         "Find closest node; returns dict with timestamp/arb_info or None.")
        // Expose public build/append helpers directly
        .def("buildAVLTree", &TimeTree::buildAVLTree,
