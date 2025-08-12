@@ -57,8 +57,8 @@ PYBIND11_MODULE(timetree, m) {
            py::return_value_policy::reference,
            "Append entries from a timestamp file into the existing AVL tree; returns the root.")
         .def_property_readonly("root", [](TimeTree& self){ return self.m_root; })
-        .def("height", [](TimeTree& self){ return self.getTreeDepth(self.m_root); })
-        .def("nodes", [](TimeTree& self){ return self.getTotalNodes(self.m_root); })
-        .def("leaves", [](TimeTree& self){ return self.countLeafNodes(self.m_root); })
+        .def("getTreeDepth", [](TimeTree& self){ return self.getTreeDepth(self.m_root); })
+        .def("getTotalNodes", [](TimeTree& self){ return self.getTotalNodes(self.m_root); })
+        .def("countLeafNodes", [](TimeTree& self){ return self.countLeafNodes(self.m_root); })
         ;
 }
