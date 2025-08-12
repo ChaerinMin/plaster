@@ -31,18 +31,19 @@ class TimeCache:
             print(f"Loaded existing TimeTree from {TIMETREE_FILENAME}")
             # static method on the class
             self.time_tree = timetree_ext.TimeTree.load(self.time_tree_path)
-            self.print_stats()
-            return
+        else:
+            # If no tree exists, concat all txt timestamp files and create a new one
+            print('No existing time tree found (or it is empty), creating a new one.')
+            metadata_files = sorted(glob.glob(os.path.join(self.sensor_dir, "*.txt")))
+            self.time_tree = timetree_ext.TimeTree()
+            for metadata_path in metadata_files:
+                self.time_tree.appendAVLTree(metadata_path)
 
-        # If no tree exists, concat all txt timestamp files and create a new one
-        print('No existing time tree found (or it is empty), creating a new one.')
-        metadata_files = sorted(glob.glob(os.path.join(self.sensor_dir, "*.txt")))
-        self.time_tree = timetree_ext.TimeTree()
-        for metadata_path in metadata_files:
-            self.time_tree.appendAVLTree(metadata_path)
+            self.time_tree.save(self.time_tree_path)
 
-        self.time_tree.save(self.time_tree_path)
         self.print_stats()
+        # Try finding a node
+        self.time_tree.get(1436376767246815604)
 
 import argparse
 
