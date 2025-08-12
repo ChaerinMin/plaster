@@ -105,7 +105,7 @@ public:
         return 1 + getTotalNodes(node->left) + getTotalNodes(node->right);
     }
 
-    std::shared_ptr<TimeNode> appendAVLTree(const std::string &timestamp_filepath)
+    void appendAVLTree(const std::string &timestamp_filepath)
     {
         std::cout << "Appending to AVLtree from " << timestamp_filepath << std::endl;
         m_root = buildAVLTree(timestamp_filepath, m_root);
