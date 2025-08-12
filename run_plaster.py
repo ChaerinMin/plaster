@@ -20,4 +20,8 @@ if __name__ == "__main__":
     for (day_dir, day) in zip(day_dirs, source_instance.days):
         sensor_dirs = [os.path.join(day_dir, sensor.path) for sensor in day.sensors]
         for sensor_dir in sensor_dirs:
-            time_cache_instance = TimeCache(sensor_dir, force_recompute=args.force_reserialize)
+            try:
+                print(f"Initializing TimeCache for sensor directory: {sensor_dir}")
+                time_cache_instance = TimeCache(sensor_dir, force_recompute=args.force_reserialize)
+            except Exception as e:
+                print(f"Error initializing TimeCache for {sensor_dir}: {e}. Are you sure the environment is activated?")
