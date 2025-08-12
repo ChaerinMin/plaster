@@ -1,5 +1,11 @@
-import timetree
+try:
+    # When built in-place, the compiled module is timetree/timetree*.so
+    from timetree import timetree as timetree_ext
+except Exception:
+    # If installed as a top-level extension
+    import timetree as timetree_ext
 import os
+import glob
 from source import SensorMetadata
 
 
@@ -16,14 +22,15 @@ class TimeCache:
         self.time_tree_path = os.path.join(self.sensor_dir, TIMETREE_FILENAME)
         if os.path.exists(self.time_tree_path):
             print(f"Loaded existing TimeTree from {TIMETREE_FILENAME}")
-            self.time_tree = timetree.load(self.time_tree_path)
+            # static method on the class
+            self.time_tree = timetree_ext.TimeTree.load(self.time_tree_path)
             return
 
         # If no tree exists, concat all txt timestamp files and create a new one
-        metadata_files = [f for f in os.listdir(self.sensor_dir) if f.endswith("*.txt")]
-        self.time_tree = timetree.TimeTree()
-        for metadata_file in metadata_files:
-            self.time_tree.appendAVLTree(os.path.join(self.sensor_dir, metadata_file))
+        metadata_files = glob.glob(os.path.join(self.sensor_dir, "*.txt"))
+        self.time_tree = timetree_ext.TimeTree()
+        for metadata_path in metadata_files:
+            self.time_tree.appendAVLTree(metadata_path)
 
         self.time_tree.save(self.time_tree_path)
 
