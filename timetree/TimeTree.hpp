@@ -107,13 +107,12 @@ public:
 
     void appendAVLTree(const std::string &timestamp_filepath)
     {
-        std::cout << "Appending to AVLtree from " << timestamp_filepath << std::endl;
         m_root = buildAVLTree(timestamp_filepath, m_root);
     }
 
     std::shared_ptr<TimeNode> buildAVLTree(const std::string &timestamp_filepath, std::shared_ptr<TimeNode> root = nullptr)
     {
-        std::cout << "Building AVLtree from " << timestamp_filepath << std::endl;
+        // std::cout << "Building AVLtree from " << timestamp_filepath << std::endl;
         std::ifstream file(timestamp_filepath);
         if (!file.is_open())
         {
@@ -124,6 +123,7 @@ public:
         std::string line;
         while (getline(file, line))
         {
+            std::cout << "Processing line: " << line << std::endl;
             std::istringstream iss(line);
             std::string prefix, timestamp_str, frameidx;
             if (std::getline(iss, prefix, '_') &&
