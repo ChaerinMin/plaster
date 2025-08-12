@@ -1,8 +1,7 @@
-import timetree as timetree_ext
+import timetree
 import os
 import glob
 from source import SensorMetadata
-
 
 TIMETREE_FILENAME = 'plaster.timetree'
 
@@ -26,7 +25,7 @@ class TimeCache:
         if (os.path.exists(self.time_tree_path) and os.path.getsize(self.time_tree_path) > 0) and self.force_recompute == False:
             print(f"Loaded existing TimeTree from {TIMETREE_FILENAME}")
             # static method on the class
-            self.time_tree = timetree_ext.TimeTree.load(self.time_tree_path)
+            self.time_tree = timetree.TimeTree.load(self.time_tree_path)
         else:
             # If no tree exists, concat all txt timestamp files and create a new one
             if self.force_recompute:
@@ -34,7 +33,7 @@ class TimeCache:
             else:
                 print('No existing time tree found (or it is empty), creating a new one.')
             metadata_files = sorted(glob.glob(os.path.join(self.sensor_dir, "*.txt")))
-            self.time_tree = timetree_ext.TimeTree()
+            self.time_tree = timetree.TimeTree()
             for metadata_path in metadata_files:
                 self.time_tree.appendAVLTree(metadata_path)
 
