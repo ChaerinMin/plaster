@@ -17,7 +17,7 @@ The typical workflow is to have a standalone machine (e.g., on AWS or GCP) run `
 
 ### Install Anaconda
 
-- Download the Anaconda installer script:
+- Download the Anaconda installer script, or any other python environment you want:
 
 ```bash
 wget https://repo.anaconda.com/archive/Anaconda3-latest-Linux-x86_64.sh
@@ -33,13 +33,16 @@ For more details, see the [official Anaconda documentation](https://docs.anacond
 conda create -n plaster python=3.11 -y
 conda activate plaster
 
-# tools needed
+# Install timetree
+pip install "git+https://github.com//timetree.git@main"
+
+# Optional tools needed for C++ version of time tree
 conda install -c conda-forge pybind11 -y
 # If you don’t have a compiler:
 conda install -c conda-forge gxx_linux-64 -y
 ```
 
-6. Build the timetree extension
+6. Optionally, build the timetree extension
 
 ```
 cd timetree
@@ -48,7 +51,3 @@ pip install -e .
 # Optionally, test
 python -c "import timetree; print('timetree OK')"
 ```
-
-### Running `plaster`
-
-- First install `pybind`: `conda install -c conda-forge pybind`
