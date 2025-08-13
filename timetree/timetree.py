@@ -68,36 +68,43 @@ class TimeTree:
         except OSError:
             return None
 
-    # Expose helpers that operate on root if no node is provided (mirrors pybind wrappers in practice)
+    # Expose helpers; default to root only on initial call. Recursion uses private helpers.
     def getHeight(self, node: Optional[TimeNode] = None) -> int:
-        n = self.m_root if node is None else node
-        return n.height if n is not None else 0
+        return node.height if node is not None else 0
 
     def getBalanceFactor(self, node: Optional[TimeNode] = None) -> int:
-        n = self.m_root if node is None else node
-        if n is None:
+        if node is None:
             return 0
-        return self.getHeight(n.left) - self.getHeight(n.right)
+        return self.getHeight(node.left) - self.getHeight(node.right)
 
     def countLeafNodes(self, node: Optional[TimeNode] = None) -> int:
         n = self.m_root if node is None else node
+        return self._countLeafNodes(n)
+
+    def _countLeafNodes(self, n: Optional[TimeNode]) -> int:
         if n is None:
             return 0
         if n.left is None and n.right is None:
             return 1
-        return self.countLeafNodes(n.left) + self.countLeafNodes(n.right)
+        return self._countLeafNodes(n.left) + self._countLeafNodes(n.right)
 
     def getTreeDepth(self, node: Optional[TimeNode] = None) -> int:
         n = self.m_root if node is None else node
+        return self._getTreeDepth(n)
+
+    def _getTreeDepth(self, n: Optional[TimeNode]) -> int:
         if n is None:
             return 0
-        return 1 + max(self.getTreeDepth(n.left), self.getTreeDepth(n.right))
+        return 1 + max(self._getTreeDepth(n.left), self._getTreeDepth(n.right))
 
     def getTotalNodes(self, node: Optional[TimeNode] = None) -> int:
         n = self.m_root if node is None else node
+        return self._getTotalNodes(n)
+
+    def _getTotalNodes(self, n: Optional[TimeNode]) -> int:
         if n is None:
             return 0
-        return 1 + self.getTotalNodes(n.left) + self.getTotalNodes(n.right)
+        return 1 + self._getTotalNodes(n.left) + self._getTotalNodes(n.right)
 
     def appendAVLTree(self, timestamp_filepath: str) -> None:
         self.m_root = self.buildAVLTree(timestamp_filepath, self.m_root)
