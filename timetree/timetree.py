@@ -116,10 +116,9 @@ class TimeTree:
 
         r = root
         with open(timestamp_filepath, "r", encoding="utf-8", errors="ignore") as file:
-            for line in file:
-                line = line.strip()
-                if not line:
-                    continue
+            for raw in file:
+                # C++ getline removes only the trailing newline; preserve leading/trailing spaces otherwise
+                line = raw.rstrip("\r\n")
                 # Line format: frame_<TIMESTAMP>[_<FRAMEIDX>] [ADD_INFO]
                 space_split = tokenize(line, " ")
                 fail = True
