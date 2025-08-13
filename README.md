@@ -34,7 +34,7 @@ conda create -n plaster python=3.11 -y
 conda activate plaster
 
 # Install timetree
-pip install "git+https://github.com//timetree.git@main"
+pip install "git+ssh://git@github.com/brown-ivl/timetree.git@main"
 
 # Optional tools needed for C++ version of time tree
 conda install -c conda-forge pybind11 -y
