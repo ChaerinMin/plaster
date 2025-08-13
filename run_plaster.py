@@ -13,6 +13,7 @@ if __name__ == "__main__":
         parser.print_help()
         exit(1)
 
+    # First, cache the source directory and plaster.json
     source_instance = source.Source(args.source, force_reserialize=args.force_reserialize)
 
     # Recursively find all sensor directories in source-->day-->sensor. Then run time_cache
