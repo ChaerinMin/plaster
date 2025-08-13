@@ -37,22 +37,9 @@ class TimeCache:
             else:
                 print('No existing time tree found (or it is empty), creating a new one.')
             metadata_files = sorted(glob.glob(os.path.join(self.sensor_dir, "*.txt")))
-            print(f"Discovered {len(metadata_files)} .txt files in {self.sensor_dir}")
-            for p in metadata_files:
-                print(f" - {os.path.basename(p)} ({os.path.getsize(p)} bytes)")
-
             self.time_tree = timetree.TimeTree()
-            for idx, metadata_path in enumerate(metadata_files, 1):
-                print(f"[{idx}/{len(metadata_files)}] Appending: {os.path.basename(metadata_path)}")
+            for metadata_path in metadata_files:
                 self.time_tree.appendAVLTree(metadata_path)
-                # Per-append stats
-                try:
-                    total = self.time_tree.getTotalNodes()
-                    leaves = self.time_tree.countLeafNodes()
-                    depth = self.time_tree.getTreeDepth()
-                    print(f"   -> nodes={total}, leaves={leaves}, depth={depth}")
-                except Exception as e:
-                    print(f"   -> error computing stats: {e}")
 
             self.time_tree.save(self.time_tree_path)
             print(f"Created new TimeTree and saved to {TIMETREE_FILENAME}")
