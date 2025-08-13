@@ -1,5 +1,8 @@
+# Add file directory to import path
+file_dir = os.path.dirname(os.path.abspath(__file__))
+if file_dir not in sys.path:
+    sys.path.insert(0, file_dir)
 from timetree import timetree
-import os
 import glob
 from source import SensorMetadata
 
@@ -43,6 +46,8 @@ class TimeCache:
         self.print_stats()
 
 import argparse
+import os
+import sys
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialize TimeCache for a sensor directory.")
