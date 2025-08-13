@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # First, cache the source directory and plaster.json
     source_instance = source.Source(args.source, force_reserialize=args.force_reserialize)
 
-    # Recursively find all sensor directories in source-->day-->sensor. Then run time_cache
+    # Time calibration: Recursively find all sensor directories in source-->day-->sensor. Then run time_cache
     day_dirs = [os.path.join(day.source_path, day.date) for day in source_instance.days]
     for (day_dir, day) in zip(day_dirs, source_instance.days):
         sensor_dirs = [os.path.join(day_dir, sensor.path) for sensor in day.sensors]
@@ -26,3 +26,5 @@ if __name__ == "__main__":
                 time_cache_instance = TimeCache(sensor_dir, force_recompute=args.force_reserialize)
             except Exception as e:
                 print(f"Error initializing TimeCache for {sensor_dir}: {e}. Are you sure the environment is activated?")
+
+    # TODO: Spatial calibration of sensors
