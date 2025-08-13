@@ -54,7 +54,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Initialize TimeCache for a sensor directory.")
     parser.add_argument("-d", "--sensor-dir", type=str, required=True, help="Path to the sensor directory")
     parser.add_argument("-t", "--timestamp", type=int, required=True, help="Timestamp to retrieve from the TimeTree")
-    parser.add_argument("-mt", "--max_threshold", type=int, default=1000, help="Threshold for timestamp retrieval (in same units as timestamp)")
+    parser.add_argument("-mt", "--max_threshold", type=int, required=True, help="Threshold for timestamp retrieval (in same units as timestamp)")
     # Force tree recomputation
     parser.add_argument("-f", "--force-recompute", action="store_true", help="Force recomputation of the TimeTree")
 
