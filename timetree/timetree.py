@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import os
 import struct
+import sys
 from typing import Optional, List
 
 
 def tokenize(s: str, delim: str) -> List[str]:
-    # Mirror the simple C++ tokenize that keeps empty tokens if present
-    # Python split won't emit empty tokens for repeated delimiters unless using split with specified delim; that's fine.
+    # Keep for compatibility; used sparingly after optimized parser
     return s.split(delim)
 
 
@@ -117,37 +117,34 @@ class TimeTree:
         r = root
         with open(timestamp_filepath, "r", encoding="utf-8", errors="ignore") as file:
             for raw in file:
-                # C++ getline removes only the trailing newline; preserve leading/trailing spaces otherwise
+                # C++ getline removes only the trailing newline; preserve other spaces
                 line = raw.rstrip("\r\n")
-                # Line format: frame_<TIMESTAMP>[_<FRAMEIDX>] [ADD_INFO]
-                space_split = tokenize(line, " ")
-                fail = True
-                timestamp_str = "0"
-                frameidx = ""
-                if len(space_split) >= 1:
-                    und_split = tokenize(space_split[0], "_")
-                    if len(und_split) >= 2:
-                        timestamp_str = und_split[1]
-                        try:
-                            timestamp = int(timestamp_str)
-                        except ValueError:
-                            timestamp = 0
-                        if len(und_split) >= 3:
-                            frameidx = und_split[2]
-                        if timestamp <= 0:
-                            print(f"Invalid timestamp found: {timestamp}")
-                        else:
-                            fail = False
-                # addinfo is parsed but unused like in C++
-                # if len(space_split) >= 2:
-                #     addinfo = space_split[1]
-
-                if fail:
+                # Fast parse: take first token before first space
+                sp = line.find(' ')
+                first = line if sp == -1 else line[:sp]
+                # Expect pattern: PREFIX_<TIMESTAMP>[_FRAME]
+                # Find first '_' and second '_'
+                u1 = first.find('_')
+                if u1 == -1:
                     print(f"Skipping malformed line: {line}")
                     continue
-
+                u2 = first.find('_', u1 + 1)
+                if u2 == -1:
+                    ts_str = first[u1 + 1:]
+                    frameidx = ""
+                else:
+                    ts_str = first[u1 + 1:u2]
+                    frameidx = first[u2 + 1:]
+                try:
+                    ts = int(ts_str)
+                except ValueError:
+                    ts = 0
+                if ts <= 0:
+                    print(f"Invalid timestamp found: {ts}")
+                    print(f"Skipping malformed line: {line}")
+                    continue
                 # Insert into AVL
-                r = self._insert(r, int(timestamp_str), frameidx)
+                r = self._insert(r, ts, frameidx)
         return r
 
     # ----- Internal AVL helpers -----
@@ -159,8 +156,12 @@ class TimeTree:
         x.right = y
         y.left = T2
 
-        y.height = max(self.getHeight(y.left), self.getHeight(y.right)) + 1
-        x.height = max(self.getHeight(x.left), self.getHeight(x.right)) + 1
+        yl = y.left.height if y.left else 0
+        yr = y.right.height if y.right else 0
+        y.height = (yl if yl > yr else yr) + 1
+        xl = x.left.height if x.left else 0
+        xr = x.right.height if x.right else 0
+        x.height = (xl if xl > xr else xr) + 1
         return x
 
     def _rotateLeft(self, x: TimeNode) -> TimeNode:
@@ -171,8 +172,12 @@ class TimeTree:
         y.left = x
         x.right = T2
 
-        x.height = max(self.getHeight(x.left), self.getHeight(x.right)) + 1
-        y.height = max(self.getHeight(y.left), self.getHeight(y.right)) + 1
+        xl = x.left.height if x.left else 0
+        xr = x.right.height if x.right else 0
+        x.height = (xl if xl > xr else xr) + 1
+        yl = y.left.height if y.left else 0
+        yr = y.right.height if y.right else 0
+        y.height = (yl if yl > yr else yr) + 1
         return y
 
     def _insert(self, root: Optional[TimeNode], timestamp: int, frameidx: str) -> TimeNode:
@@ -186,12 +191,14 @@ class TimeTree:
         else:
             return root
 
-        root.height = 1 + max(self.getHeight(root.left), self.getHeight(root.right))
-        balance = self.getBalanceFactor(root)
+        lh = root.left.height if root.left else 0
+        rh = root.right.height if root.right else 0
+        root.height = (lh if lh > rh else rh) + 1
+        balance = lh - rh
 
-        if balance > 1 and timestamp < (root.left.timestamp if root.left else timestamp):
+        if balance > 1 and root.left and timestamp < root.left.timestamp:
             return self._rotateRight(root)
-        if balance < -1 and timestamp > (root.right.timestamp if root.right else timestamp):
+        if balance < -1 and root.right and timestamp > root.right.timestamp:
             return self._rotateLeft(root)
         if balance > 1 and root.left and timestamp > root.left.timestamp:
             root.left = self._rotateLeft(root.left)
@@ -219,22 +226,27 @@ class TimeTree:
         return None
 
     # ----- Serialization helpers (pre-order), matching C++ binary layout -----
+    # Precompiled struct packers for speed (little-endian)
+    _S_Q = struct.Struct('<Q')
+    _S_q = struct.Struct('<q')
+    _S_bb = struct.Struct('<??')
+
     @staticmethod
     def _save_node(f, node: Optional[TimeNode]) -> None:
         if node is None:
             return
         # int64_t timestamp
-        f.write(struct.pack("<q", int(node.timestamp)))
+        f.write(TimeTree._S_q.pack(int(node.timestamp)))
         # size_t len (assume 64-bit little-endian)
         data = node.arbitrary_node_info.encode("utf-8")
-        f.write(struct.pack("<Q", len(data)))
+        f.write(TimeTree._S_Q.pack(len(data)))
         # bytes of string
         if data:
             f.write(data)
         # bool has_left, bool has_right (1 byte each)
         has_left = node.left is not None
         has_right = node.right is not None
-        f.write(struct.pack("<??", has_left, has_right))
+        f.write(TimeTree._S_bb.pack(has_left, has_right))
         # recurse
         if has_left:
             TimeTree._save_node(f, node.left)
@@ -247,18 +259,18 @@ class TimeTree:
         hdr = f.read(8)
         if len(hdr) < 8:
             return None
-        (timestamp,) = struct.unpack("<q", hdr)
+        (timestamp,) = TimeTree._S_q.unpack(hdr)
         len_bytes = f.read(8)
         if len(len_bytes) < 8:
             return None
-        (length,) = struct.unpack("<Q", len_bytes)
+        (length,) = TimeTree._S_Q.unpack(len_bytes)
         info_bytes = f.read(length) if length > 0 else b""
         if len(info_bytes) < length:
             return None
         has_flags = f.read(2)
         if len(has_flags) < 2:
             return None
-        has_left, has_right = struct.unpack("<??", has_flags)
+        has_left, has_right = TimeTree._S_bb.unpack(has_flags)
 
         node = TimeNode(int(timestamp), info_bytes.decode("utf-8"))
         if has_left:
@@ -266,8 +278,7 @@ class TimeTree:
         if has_right:
             node.right = TimeTree._load_node(f)
         # height is not serialized; recompute lazily upwards if needed
-        node.height = 1 + max(
-            (node.left.height if node.left else 0),
-            (node.right.height if node.right else 0),
-        )
+        lh = node.left.height if node.left else 0
+        rh = node.right.height if node.right else 0
+        node.height = (lh if lh > rh else rh) + 1
         return node
