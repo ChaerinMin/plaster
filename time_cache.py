@@ -1,4 +1,5 @@
 # Add file directory to import path
+import os, sys
 file_dir = os.path.dirname(os.path.abspath(__file__))
 if file_dir not in sys.path:
     sys.path.insert(0, file_dir)
