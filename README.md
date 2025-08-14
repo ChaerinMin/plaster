@@ -36,18 +36,6 @@ conda activate plaster
 # Install timetree
 pip install "git+ssh://git@github.com/brown-ivl/timetree.git@main"
 
-# Optional tools needed for C++ version of time tree
-conda install -c conda-forge pybind11 -y
-# If you don’t have a compiler:
-conda install -c conda-forge gxx_linux-64 -y
-```
-
-6. Optionally, build the timetree extension
-
-```
-cd timetree
-python setup.py build_ext --inplace
-pip install -e .
-# Optionally, test
-python -c "import timetree; print('timetree OK')"
+# Install primer
+pip install "git+ssh://git@github.com/brown-ivl/primer.git@main"
 ```
