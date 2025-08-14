@@ -37,5 +37,5 @@ conda activate plaster
 pip install "git+ssh://git@github.com/brown-ivl/timetree.git@main"
 
 # Install primer
-pip install "git+ssh://git@github.com/brown-ivl/primer.git@main"
+#pip install "git+ssh://git@github.com/brown-ivl/primer.git@main"
 ```

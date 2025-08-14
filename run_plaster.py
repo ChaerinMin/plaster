@@ -2,6 +2,7 @@ import source
 import argparse
 from time_cache import TimeCache
 import os
+import primer
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
 parser.add_argument("-s", "--source", type=str, help="Path to the source directory")
@@ -27,4 +28,9 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"Error initializing TimeCache for {sensor_dir}: {e}. Are you sure the environment is activated?")
 
-    # TODO: Spatial calibration of sensors
+    # Now let's use primer to get the data for spatial sensor calibration
+    for day in source_instance.days:
+        for ms in day.multisequences:
+            dataloader = primer.Primer(source_instance.path, day.date, ms["name"])
+            data = dataloader.get_overlapping(lookup_thresh_ms=20)
+            print(data)
