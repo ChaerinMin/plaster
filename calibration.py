@@ -194,11 +194,16 @@ def calibrate_camera_from_primer(frame_data: Any,
         pycolmap.match_exhaustive(database_path=database_path)
         
         # Reconstruction
+        incremental_options = pycolmap.IncrementalPipelineOptions()
+        incremental_options.multiple_models = False # Avoid multiple models
+        incremental_options.max_num_models = 1
+        incremental_options.ba_global_function_tolerance = 0.000001
         reconstruction = pycolmap.incremental_mapping(
             database_path=database_path,
             image_path=image_dir,
             output_path=output_dir,
-            )
+            options=incremental_options
+        )
         
         norm_rec = _select_reconstruction(reconstruction)
         
