@@ -27,14 +27,3 @@ if __name__ == "__main__":
                 time_cache_instance = TimeCache(sensor_dir, force_recompute=args.force_reserialize)
             except Exception as e:
                 print(f"Error initializing TimeCache for {sensor_dir}: {e}. Are you sure the environment is activated?")
-
-    # Now let's use primer to get the data for spatial sensor calibration
-    for day in source_instance.days:
-        print(f"Calibrating multisequences in day: {day.date}")
-        # Parse JSON in day directory to get multisequence names
-        
-        for ms in day.multisequences:
-            print(f"Processing multisequence: {ms['name']}")
-            dataloader = primer.Primer(source_instance.path, day.date, ms["name"])
-            data = dataloader.get_overlapping(lookup_thresh_ms=20)
-            print(data)
