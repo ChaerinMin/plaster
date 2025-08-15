@@ -34,7 +34,8 @@ if __name__ == "__main__":
             data = dataloader.get_overlapping(lookup_thresh_ms=20)
             # Perform camera calibration (best-effort) for this multisequence
             # Get all the frames from data
-            print(len(data["members"]))
+            print(data["members"])
+            exit()
             frame_data = [m.get("frame") for m in data["members"]]
             calib_dir = os.path.join(args.source, day, ms["name"])
             calib_res = calibrate_camera_from_primer(
