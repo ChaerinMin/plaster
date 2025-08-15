@@ -33,9 +33,12 @@ if __name__ == "__main__":
             dataloader = primer.Primer(args.source, day, ms["name"])
             data = dataloader.get_overlapping(lookup_thresh_ms=20)
             # Perform camera calibration (best-effort) for this multisequence
+            # Get all the frames from data
+            data["members"]
+            frame_data = [m.get("frame") for m in data["members"]]
             calib_dir = os.path.join(args.source, day, ms["name"])
             calib_res = calibrate_camera_from_primer(
-                primer_data=data,
+                primer_data=frame_data,
                 output_dir=calib_dir,
                 camera_model="PINHOLE",
                 clear_previous=False,

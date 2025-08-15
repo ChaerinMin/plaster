@@ -3,44 +3,28 @@ Camera calibration utilities using pycolmap.
 
 Function: calibrate_camera_from_primer(primer_data, output_dir, ...)
 
-Accepted Primer data structures (auto-detected):
-    1. Dict with key "members" (PRIMARY expected structure)
-             primer_data = { "members": [ member_dict, ... ] }
-             Each member_dict MUST contain at least:
-                     name          -> sensor name (string)
-                     frame_idx     -> (int) index within that sensor (may be None)
-                     frame         -> numpy ndarray image OR string path (may be None)
-                     timestamp     -> optional numeric timestamp (can be None)
-                     sensor_data   -> optional additional payload (ignored here)
-                     diff          -> optional field (ignored here)
-             Each member is converted into a calibration frame if it has a usable
-             image: member['frame'] (ndarray) OR member['frame'] (str path) or, as a
-             fallback, member['sensor_data'] if it is an ndarray.
-             Assigned frame id: f"{name}_{frame_idx}" if frame_idx not None else name.
-
-    2. Dict with key "frames" -> iterable of frame objects.
-    3. Iterable of frame objects directly.
-             Frame object forms accepted:
-                 - dict with keys: id|frame_id|timestamp (identifier) and either
-                             * image: numpy ndarray (RGB/BGR) OR
-                             * path : path to existing image file
-                 - tuple/list: (frame_id, image_ndarray)
+Lightweight contract for primer_data:
+  - Either a dict with key "frames" or an iterable of frame objects.
+  - Each frame can be:
+        dict with keys: id|frame_id|timestamp (identifier), and either
+            * image: numpy ndarray (RGB or BGR) OR
+            * path: path to an existing image file
+    or  tuple/list (frame_id, image_ndarray).
 
 Behavior:
-    - Writes any in-memory images to <output_dir>/images as JPEG.
-    - Runs a minimal reconstruction with pycolmap to estimate intrinsics
-        and extrinsics.
-    - Returns a result dictionary with success flag, message, camera params,
-        and per-image poses.
+  - Writes any in-memory images to <output_dir>/images as JPEG.
+  - Runs a minimal reconstruction with pycolmap to estimate intrinsics
+    and extrinsics.
+  - Returns a result dictionary with success flag, message, camera params,
+    and per-image poses.
 
 Edge cases handled:
-    - pycolmap missing -> graceful failure.
-    - Insufficient usable images (< min_images) -> early return.
-    - Re-uses existing directory unless clear_previous=True.
-    - Silently skips members/frames lacking image content.
+  - pycolmap missing -> graceful failure.
+  - Insufficient images (< min_images) -> early return.
+  - Re-uses existing directory unless clear_previous=True.
 
 Install dependency:
-        pip install pycolmap
+    pip install pycolmap
 """
 
 from __future__ import annotations
@@ -65,85 +49,18 @@ def _ensure_dir(path: str) -> str:
 
 
 def _normalize_frames(primer_data: Any) -> List[Dict[str, Any]]:
-    """Convert heterogeneous Primer structures into a list of frame dicts.
-
-    Output frame dict schema (may include extra fields from source):
-        {
-            'id': str,              # unique identifier
-            'image': ndarray|None,  # in-memory image if available
-            'path': str|None,       # on-disk image path if available
-            'timestamp': any|None,
-            'source_member': original_member_dict (for traceability)
-        }
-    Frames missing both 'image' and 'path' are discarded.
-    """
     if primer_data is None:
         return []
-
-    norm: List[Dict[str, Any]] = []
-
-    # Case 1: New Primer structure with 'members'
-    if isinstance(primer_data, dict) and "members" in primer_data and isinstance(primer_data["members"], (list, tuple)):
-        members = primer_data["members"]
-        try:
-            import numpy as np  # type: ignore
-        except Exception:  # pragma: no cover
-            np = None  # type: ignore
-        for m in members:
-            if not isinstance(m, dict):
-                continue
-            name = m.get("name")
-            frame_idx = m.get("frame_idx")
-            ts = m.get("timestamp")
-            frame_obj = m.get("frame")
-            sensor_data = m.get("sensor_data")
-            img = None
-            path = None
-            # Accept str path in frame
-            if isinstance(frame_obj, str) and os.path.exists(frame_obj):
-                path = frame_obj
-            # ndarray?
-            elif frame_obj is not None and 'numpy' in type(frame_obj).__module__:
-                img = frame_obj
-            # Fallback to sensor_data if ndarray
-            elif sensor_data is not None and 'numpy' in type(sensor_data).__module__:
-                img = sensor_data
-            # Build id
-            fid = str(name) if frame_idx is None else f"{name}_{frame_idx}"
-            if img is None and (path is None or not os.path.exists(path)):
-                continue  # skip unusable member
-            norm.append({
-                "id": fid,
-                "image": img,
-                "path": path,
-                "timestamp": ts,
-                "source_member": m,
-            })
-        return norm
-
-    # Case 2: Dict with frames
     if isinstance(primer_data, dict) and "frames" in primer_data:
         frames = primer_data["frames"]
     else:
         frames = primer_data
-
+    norm = []
     for f in frames:
         if isinstance(f, dict):
-            fid = f.get("id") or f.get("frame_id") or f.get("timestamp") or uuid.uuid4()
-            out = {"id": str(fid), "timestamp": f.get("timestamp"), "source_member": f}
-            if "image" in f:
-                out["image"] = f.get("image")
-            if "path" in f:
-                path = f.get("path")
-                if isinstance(path, str) and os.path.exists(path):
-                    out["path"] = path
-            # If neither image nor valid path, skip
-            if not (out.get("image") is not None or out.get("path") is not None):
-                continue
-            norm.append(out)
+            norm.append(f)
         elif isinstance(f, (list, tuple)) and len(f) >= 2:
-            fid = f[0]
-            norm.append({"id": str(fid), "image": f[1], "timestamp": None, "source_member": f})
+            norm.append({"id": f[0], "image": f[1]})
     return norm
 
 
