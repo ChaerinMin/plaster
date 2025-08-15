@@ -72,6 +72,12 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[st
         import numpy as np  # type: ignore
     except Exception:  # pragma: no cover
         return written
+    # Torch support (optional)
+    try:  # pragma: no cover - optional dependency
+        import torch  # type: ignore
+        has_torch = True
+    except Exception:
+        has_torch = False
 
     for f in frames:
         frame_id = str(f.get("id") or f.get("frame_id") or f.get("timestamp") or uuid.uuid4())
@@ -82,8 +88,38 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[st
         if img is None:
             failure_reasons.append((frame_id, "no 'image' key / value is None and no valid 'path' provided"))
             continue
+        # Convert torch tensors to numpy if necessary
+        if has_torch and 'torch' in globals():  # safeguard
+            try:
+                import torch  # type: ignore
+                if isinstance(img, torch.Tensor):
+                    # Move to CPU, detach
+                    t = img.detach().cpu()
+                    # If 3D tensor and first dim is channels (C,H,W)
+                    if t.ndim == 3 and t.shape[0] in (1, 3, 4):
+                        t = t.permute(1, 2, 0)  # HWC
+                    elif t.ndim == 2:
+                        pass  # HW
+                    elif t.ndim == 3 and t.shape[2] in (1, 3, 4):
+                        # Already HWC
+                        pass
+                    else:
+                        failure_reasons.append((frame_id, f"unsupported tensor shape {tuple(t.shape)}"))
+                        continue
+                    # Convert dtype
+                    if t.dtype.is_floating_point:
+                        t = t.clamp(0, 1) * 255.0
+                        arr = t.to(torch.uint8).numpy()
+                    else:
+                        # Clamp to 0-255 then cast
+                        t = torch.clamp(t, 0, 255)
+                        arr = t.to(torch.uint8).numpy()
+                    img = arr
+            except Exception as e:  # conversion failed
+                failure_reasons.append((frame_id, f"torch tensor conversion failed: {e}"))
+                continue
         if not isinstance(img, np.ndarray):
-            failure_reasons.append((frame_id, f"image object not numpy ndarray (type={type(img)})"))
+            failure_reasons.append((frame_id, f"image object not numpy ndarray after conversion (type={type(img)})"))
             continue
         out_path = os.path.join(image_dir, f"{frame_id}.jpg")
         try:
