@@ -36,7 +36,7 @@ if __name__ == "__main__":
             # args.source = "~/data/brics/non-pii/brics-studio"
             # day = "2025-03-28" # brics-studio, multisequence000001
             # ms["name"] = "multisequence000001"
-            args.source = "~/data/brics/non-pii/brics-universe"
+            args.source = "/oscar/data/ssrinath/data/brics/non-pii/brics-universe"
             day = "2025-05-14" # brics-universe, multisequence000003
             ms["name"] = "multisequence000003"
 
