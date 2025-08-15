@@ -54,7 +54,7 @@ def _normalize_frames(frames: Any) -> List[Dict[str, Any]]:
         return []
     norm = []
     for ctr, f in enumerate(frames):
-        norm.append({"id": ctr, "image": f[1]})
+        norm.append({"id": ctr, "image": f})
     return norm
 
 
