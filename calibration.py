@@ -201,6 +201,7 @@ def calibrate_camera_from_primer(frame_data: Any,
             )
         
         norm_rec = _select_reconstruction(reconstruction)
+        
         if norm_rec is None:
             debug_msg = "Reconstruction object format unsupported (no images)"
             if verbose:

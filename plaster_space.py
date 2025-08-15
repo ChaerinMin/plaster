@@ -23,14 +23,23 @@ if __name__ == "__main__":
         exit(1)
     source_plaster = json.load(open(source_plaster_path, 'r'))
 
-    # Now let's use primer to get the data for spatial sensor calibration
+    # # Now let's use primer to get the data for spatial sensor calibration
     # for day in source_plaster["days"]:
-    day = "2025-03-28"
-    if True:
-        print(f"Calibrating multisequences in day: {day}")
-        day_plaster = json.load(open(os.path.join(args.source, day, "plaster.json"), 'r'))
+    #     print(f"Calibrating multisequences in day: {day}")
+    #     day_plaster = json.load(open(os.path.join(args.source, day, "plaster.json"), 'r'))
 
-        for ms in day_plaster["multisequences"]:
+    #     for ms in day_plaster["multisequences"]:
+    # DEBUG
+    if True:
+        if True:
+            ms = dict()
+            # args.source = "~/data/brics/non-pii/brics-studio"
+            # day = "2025-03-28" # brics-studio, multisequence000001
+            # ms["name"] = "multisequence000001"
+            args.source = "~/data/brics/non-pii/brics-universe"
+            day = "2025-05-14" # brics-universe, multisequence000003
+            ms["name"] = "multisequence000003"
+
             print(f"Processing multisequence: {ms['name']}")
             dataloader = primer.Primer(args.source, day, ms["name"])
             data = dataloader.get_overlapping(lookup_thresh_ms=20)
@@ -45,5 +54,3 @@ if __name__ == "__main__":
                 clear_previous=False,
             )
             print(f"Calibration: {calib_res.get('message')}")
-            break
-        # break
