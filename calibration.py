@@ -37,7 +37,6 @@ import torch
 import numpy as np
 import pycolmap
 
-
 def _ensure_dir(path: str) -> str:
     os.makedirs(path, exist_ok=True)
     return path
@@ -262,6 +261,3 @@ def calibrate_camera_from_primer(frame_data: Any,
                 "num_registered_images": len(image_poses)}
     except Exception as e:  # Catch-all
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
-
-
-__all__ = ["calibrate_camera_from_primer"]

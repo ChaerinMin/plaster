@@ -39,7 +39,7 @@ if __name__ == "__main__":
             frame_data = [m.get("frame") for m in data["members"]]
             calib_dir = os.path.join(args.source, day, ms["name"])
             calib_res = calibrate_camera_from_primer(
-                primer_data=frame_data,
+                frame_data=frame_data,
                 output_dir=calib_dir,
                 camera_model="PINHOLE",
                 clear_previous=False,
