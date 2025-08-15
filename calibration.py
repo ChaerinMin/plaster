@@ -195,8 +195,8 @@ def calibrate_camera_from_primer(frame_data: Any,
         
         # Reconstruction
         incremental_options = pycolmap.IncrementalPipelineOptions()
-        incremental_options.multiple_models = False # Avoid multiple models
-        incremental_options.max_num_models = 1
+        # incremental_options.multiple_models = False # Avoid multiple models
+        # incremental_options.max_num_models = 1
         incremental_options.ba_global_function_tolerance = 0.000001
         reconstruction = pycolmap.incremental_mapping(
             database_path=database_path,
