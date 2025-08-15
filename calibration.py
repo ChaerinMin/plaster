@@ -185,10 +185,42 @@ def calibrate_camera_from_primer(primer_data: Any,
         except Exception:
             # Manual pipeline fallbacks
             database_path = os.path.join(output_dir, "database.db")
-            extract_opts = pycolmap.ExtractionOptions()
-            match_opts = pycolmap.MatchingOptions()
-            pycolmap.extract_features(database_path, image_dir, extract_opts)
-            pycolmap.match_exhaustive(database_path, match_opts)
+            # Version-adaptive creation of options
+            extract_opts_cls = getattr(pycolmap, 'ExtractionOptions', None)
+            match_opts_cls = getattr(pycolmap, 'MatchingOptions', None)
+            if extract_opts_cls:
+                try:
+                    extract_opts = extract_opts_cls()
+                except Exception:
+                    extract_opts = None
+            else:
+                extract_opts = None
+            if match_opts_cls:
+                try:
+                    match_opts = match_opts_cls()
+                except Exception:
+                    match_opts = None
+            else:
+                match_opts = None
+
+            # Feature extraction
+            try:
+                if extract_opts is not None:
+                    pycolmap.extract_features(database_path, image_dir, extract_opts)
+                else:
+                    # Older versions may not require options
+                    pycolmap.extract_features(database_path, image_dir)
+            except Exception as e:
+                return {"success": False, "message": f"Feature extraction unsupported in this pycolmap version: {e}", "output_dir": output_dir}
+
+            # Matching
+            try:
+                if match_opts is not None:
+                    pycolmap.match_exhaustive(database_path, match_opts)
+                else:
+                    pycolmap.match_exhaustive(database_path)
+            except Exception as e:
+                return {"success": False, "message": f"Matching unsupported in this pycolmap version: {e}", "output_dir": output_dir}
             try:
                 reconstruction = pycolmap.incremental_mapping(
                     database_path=database_path,
