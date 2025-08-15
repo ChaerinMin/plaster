@@ -62,6 +62,7 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[st
     """Persist in-memory images to disk. Returns list of (frame_id, file_path)."""
     import imghdr
     written: List[Tuple[str, str]] = []
+    failure_reasons = []  # (frame_id, reason)
     try:
         import cv2  # type: ignore
         has_cv2 = True
@@ -79,8 +80,10 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[st
             continue
         img = f.get("image")
         if img is None:
+            failure_reasons.append((frame_id, "no 'image' key / value is None and no valid 'path' provided"))
             continue
         if not isinstance(img, np.ndarray):
+            failure_reasons.append((frame_id, f"image object not numpy ndarray (type={type(img)})"))
             continue
         out_path = os.path.join(image_dir, f"{frame_id}.jpg")
         try:
@@ -92,10 +95,23 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[st
                 from PIL import Image  # type: ignore
                 mode = "RGB" if img.ndim == 3 and img.shape[2] == 3 else "L"
                 Image.fromarray(img.astype("uint8"), mode=mode).save(out_path, quality=95)
-        except Exception:
+        except Exception as e:
+            failure_reasons.append((frame_id, f"exception during write: {e}"))
             continue
-        if os.path.exists(out_path) and imghdr.what(out_path) is not None:
-            written.append((frame_id, out_path))
+        if os.path.exists(out_path):
+            if imghdr.what(out_path) is not None:
+                written.append((frame_id, out_path))
+            else:
+                failure_reasons.append((frame_id, "file written but failed basic image validation (imghdr returned None)"))
+        else:
+            failure_reasons.append((frame_id, "attempted write but file not found afterward"))
+    if not written:
+        print(f"ERROR: No images were written to '{image_dir}'. Provided frames: {len(frames)}")
+        if failure_reasons:
+            print("Failure details (frame_id: reason):")
+            for fid, reason in failure_reasons:
+                print(f" - {fid}: {reason}")
+        print("Ensure frames contain numpy uint8 arrays or valid existing file 'path' entries.")
     return written
 
 
