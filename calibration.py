@@ -75,6 +75,7 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[st
     # Torch support (optional)
     try:  # pragma: no cover - optional dependency
         import torch  # type: ignore
+        print(torch.__version__)
         has_torch = True
     except Exception:
         has_torch = False
