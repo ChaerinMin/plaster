@@ -200,9 +200,6 @@ def calibrate_camera_from_primer(frame_data: Any,
             output_path=output_dir,
             )
         
-        # Bundle adjustment
-        pycolmap.bundle_adjustment(reconstruction)
-
         norm_rec = _select_reconstruction(reconstruction)
         if norm_rec is None:
             debug_msg = "Reconstruction object format unsupported (no images)"
