@@ -188,15 +188,20 @@ def calibrate_camera_from_primer(frame_data: Any,
         database_path = os.path.join(output_dir, "database.db")
         
         # Feature extraction
-        pycolmap.extract_features(database_path, image_dir)
+        pycolmap.extract_features(database_path=database_path, image_path=image_dir, camera_mode=pycolmap.CameraMode.AUTO, camera_model=camera_model)
 
         # Feature Matching
-        pycolmap.match_exhaustive(database_path)
+        pycolmap.match_exhaustive(database_path=database_path)
+        
+        # Reconstruction
         reconstruction = pycolmap.incremental_mapping(
             database_path=database_path,
             image_path=image_dir,
             output_path=output_dir,
             )
+        
+        # Bundle adjustment
+        pycolmap.bundle_adjustment(reconstruction)
 
         norm_rec = _select_reconstruction(reconstruction)
         if norm_rec is None:
