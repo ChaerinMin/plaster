@@ -33,6 +33,8 @@ import os
 import shutil
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
+import torch
+import numpy as np
 
 
 def _import_pycolmap():
@@ -63,22 +65,6 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[st
     import imghdr
     written: List[Tuple[str, str]] = []
     failure_reasons = []  # (frame_id, reason)
-    try:
-        import cv2  # type: ignore
-        has_cv2 = True
-    except Exception:
-        has_cv2 = False
-    try:
-        import numpy as np  # type: ignore
-    except Exception:  # pragma: no cover
-        return written
-    # Torch support (optional)
-    try:  # pragma: no cover - optional dependency
-        import torch  # type: ignore
-        print(torch.__version__)
-        has_torch = True
-    except Exception:
-        has_torch = False
 
     for f in frames:
         frame_id = str(f.get("id") or f.get("frame_id") or f.get("timestamp") or uuid.uuid4())
@@ -90,48 +76,38 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[st
             failure_reasons.append((frame_id, "no 'image' key / value is None and no valid 'path' provided"))
             continue
         # Convert torch tensors to numpy if necessary
-        if has_torch and 'torch' in globals():  # safeguard
-            try:
-                import torch  # type: ignore
-                if isinstance(img, torch.Tensor):
-                    # Move to CPU, detach
-                    t = img.detach().cpu()
-                    # If 3D tensor and first dim is channels (C,H,W)
-                    if t.ndim == 3 and t.shape[0] in (1, 3, 4):
-                        t = t.permute(1, 2, 0)  # HWC
-                    elif t.ndim == 2:
-                        pass  # HW
-                    elif t.ndim == 3 and t.shape[2] in (1, 3, 4):
-                        # Already HWC
-                        pass
-                    else:
-                        failure_reasons.append((frame_id, f"unsupported tensor shape {tuple(t.shape)}"))
-                        continue
-                    # Convert dtype
-                    if t.dtype.is_floating_point:
-                        t = t.clamp(0, 1) * 255.0
-                        arr = t.to(torch.uint8).numpy()
-                    else:
-                        # Clamp to 0-255 then cast
-                        t = torch.clamp(t, 0, 255)
-                        arr = t.to(torch.uint8).numpy()
-                    img = arr
-            except Exception as e:  # conversion failed
-                failure_reasons.append((frame_id, f"torch tensor conversion failed: {e}"))
+        if isinstance(img, torch.Tensor):
+            # Move to CPU, detach
+            t = img.detach().cpu()
+            # If 3D tensor and first dim is channels (C,H,W)
+            if t.ndim == 3 and t.shape[0] in (1, 3, 4):
+                t = t.permute(1, 2, 0)  # HWC
+            elif t.ndim == 2:
+                pass  # HW
+            elif t.ndim == 3 and t.shape[2] in (1, 3, 4):
+                # Already HWC
+                pass
+            else:
+                failure_reasons.append((frame_id, f"unsupported tensor shape {tuple(t.shape)}"))
                 continue
+            # Convert dtype
+            if t.dtype.is_floating_point:
+                t = t.clamp(0, 1) * 255.0
+                arr = t.to(torch.uint8).numpy()
+            else:
+                # Clamp to 0-255 then cast
+                t = torch.clamp(t, 0, 255)
+                arr = t.to(torch.uint8).numpy()
+            img = arr
+        
         if not isinstance(img, np.ndarray):
             failure_reasons.append((frame_id, f"image object not numpy ndarray after conversion (type={type(img)})"))
             continue
         out_path = os.path.join(image_dir, f"{frame_id}.jpg")
         try:
-            if has_cv2 and img.ndim == 3 and img.shape[2] == 3:
-                # Assume RGB, convert to BGR for cv2.imwrite
-                import cv2  # type: ignore
-                cv2.imwrite(out_path, img[:, :, ::-1])
-            else:
-                from PIL import Image  # type: ignore
-                mode = "RGB" if img.ndim == 3 and img.shape[2] == 3 else "L"
-                Image.fromarray(img.astype("uint8"), mode=mode).save(out_path, quality=95)
+            from PIL import Image  # type: ignore
+            mode = "RGB" if img.ndim == 3 and img.shape[2] == 3 else "L"
+            Image.fromarray(img.astype("uint8"), mode=mode).save(out_path, quality=95)
         except Exception as e:
             failure_reasons.append((frame_id, f"exception during write: {e}"))
             continue
