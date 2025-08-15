@@ -205,6 +205,9 @@ def calibrate_camera_from_primer(frame_data: Any,
             options=incremental_options
         )
         
+        # Undistort images
+        pycolmap.undistort_images(database_path=database_path, image_path=image_dir, output_path=output_dir)
+
         norm_rec = _select_reconstruction(reconstruction)
         
         if norm_rec is None:
