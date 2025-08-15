@@ -35,20 +35,12 @@ import uuid
 from typing import Any, Dict, List, Optional, Tuple
 import torch
 import numpy as np
-
-
-def _import_pycolmap():
-    try:
-        import pycolmap  # type: ignore
-        return pycolmap
-    except Exception:
-        return None
+import pycolmap
 
 
 def _ensure_dir(path: str) -> str:
     os.makedirs(path, exist_ok=True)
     return path
-
 
 def _normalize_frames(frames: Any) -> List[Dict[str, Any]]:
     if frames is None:
@@ -58,7 +50,6 @@ def _normalize_frames(frames: Any) -> List[Dict[str, Any]]:
     for ctr, f in enumerate(frames):
         norm.append({"id": ctr, "image": f})
     return norm
-
 
 def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[str, str]]:
     """Persist in-memory images to disk. Returns list of (frame_id, file_path)."""
@@ -127,24 +118,45 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[st
         print("Ensure frames contain numpy uint8 arrays or valid existing file 'path' entries.")
     return written
 
+# Normalize reconstruction object across pycolmap versions
+def _select_reconstruction(rec):
+    if rec is None:
+        return None
+    if hasattr(rec, 'images') and hasattr(rec, 'cameras'):
+        return rec
+    if isinstance(rec, (list, tuple)):
+        best = None
+        best_count = -1
+        for r in rec:
+            if hasattr(r, 'images'):
+                cnt = len(getattr(r, 'images', {}))
+                if cnt > best_count:
+                    best = r
+                    best_count = cnt
+        return best
+    if isinstance(rec, dict):
+        if 'images' in rec and 'cameras' in rec:
+            return rec
+        for _, v in rec.items():
+            if hasattr(v, 'images') and hasattr(v, 'cameras'):
+                return v
+            if isinstance(v, dict) and 'images' in v and 'cameras' in v:
+                return v
+    return None
 
-def calibrate_camera_from_primer(primer_data: Any,
+def calibrate_camera_from_primer(frame_data: Any,
                                  output_dir: str,
-                                 camera_model: str = "PINHOLE",
+                                 camera_model: str = "OPENCV",
                                  camera_params: Optional[List[float]] = None,
                                  clear_previous: bool = False,
                                  min_images: int = 5,
                                  verbose: bool = False) -> Dict[str, Any]:
-    """Run pycolmap camera calibration on Primer frame data.
+    """Run pycolmap camera calibration on frame data.
 
     Returns a dict with keys: success, message, output_dir, camera_params,
     image_poses, num_registered_images (when successful).
     """
-    pycolmap = _import_pycolmap()
-    if pycolmap is None:
-        return {"success": False, "message": "pycolmap not installed", "output_dir": output_dir}
-
-    frames = _normalize_frames(primer_data)
+    frames = _normalize_frames(frame_data)
     if len(frames) < min_images:
         return {"success": False, "message": f"Need >= {min_images} frames", "output_dir": output_dir}
 
@@ -174,87 +186,18 @@ def calibrate_camera_from_primer(primer_data: Any,
         rename_map[fid] = name
 
     try:
-        reconstruction = None
-        try:
-            # Preferred high-level API (recent pycolmap)
-            reconstruction = pycolmap.run_reconstruction(
-                image_dir=image_dir,
-                output_dir=output_dir,
-                camera_model=camera_model,
-                camera_params=camera_params or [],
+        database_path = os.path.join(output_dir, "database.db")
+        
+        # Feature extraction
+        pycolmap.extract_features(database_path, image_dir)
+
+        # Feature Matching
+        pycolmap.match_exhaustive(database_path)
+        reconstruction = pycolmap.incremental_mapping(
+            database_path=database_path,
+            image_path=image_dir,
+            output_path=output_dir,
             )
-        except Exception:
-            # Manual pipeline fallbacks
-            database_path = os.path.join(output_dir, "database.db")
-            # Version-adaptive creation of options
-            extract_opts_cls = getattr(pycolmap, 'ExtractionOptions', None)
-            match_opts_cls = getattr(pycolmap, 'MatchingOptions', None)
-            if extract_opts_cls:
-                try:
-                    extract_opts = extract_opts_cls()
-                except Exception:
-                    extract_opts = None
-            else:
-                extract_opts = None
-            if match_opts_cls:
-                try:
-                    match_opts = match_opts_cls()
-                except Exception:
-                    match_opts = None
-            else:
-                match_opts = None
-
-            # Feature extraction
-            try:
-                if extract_opts is not None:
-                    pycolmap.extract_features(database_path, image_dir, extract_opts)
-                else:
-                    # Older versions may not require options
-                    pycolmap.extract_features(database_path, image_dir)
-            except Exception as e:
-                return {"success": False, "message": f"Feature extraction unsupported in this pycolmap version: {e}", "output_dir": output_dir}
-
-            # Matching
-            try:
-                if match_opts is not None:
-                    pycolmap.match_exhaustive(database_path, match_opts)
-                else:
-                    pycolmap.match_exhaustive(database_path)
-            except Exception as e:
-                return {"success": False, "message": f"Matching unsupported in this pycolmap version: {e}", "output_dir": output_dir}
-            try:
-                reconstruction = pycolmap.incremental_mapping(
-                    database_path=database_path,
-                    image_path=image_dir,
-                    output_path=output_dir,
-                )
-            except Exception as e:
-                return {"success": False, "message": f"Mapping failed: {e}", "output_dir": output_dir}
-        # Normalize reconstruction object across pycolmap versions
-        def _select_reconstruction(rec):
-            if rec is None:
-                return None
-            if hasattr(rec, 'images') and hasattr(rec, 'cameras'):
-                return rec
-            if isinstance(rec, (list, tuple)):
-                best = None
-                best_count = -1
-                for r in rec:
-                    if hasattr(r, 'images'):
-                        cnt = len(getattr(r, 'images', {}))
-                        if cnt > best_count:
-                            best = r
-                            best_count = cnt
-                return best
-            if isinstance(rec, dict):
-                if 'images' in rec and 'cameras' in rec:
-                    return rec
-                for _, v in rec.items():
-                    if hasattr(v, 'images') and hasattr(v, 'cameras'):
-                        return v
-                    if isinstance(v, dict) and 'images' in v and 'cameras' in v:
-                        return v
-            return None
 
         norm_rec = _select_reconstruction(reconstruction)
         if norm_rec is None:
