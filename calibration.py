@@ -229,32 +229,98 @@ def calibrate_camera_from_primer(primer_data: Any,
                 )
             except Exception as e:
                 return {"success": False, "message": f"Mapping failed: {e}", "output_dir": output_dir}
+        # Normalize reconstruction object across pycolmap versions
+        def _select_reconstruction(rec):
+            # If it's already an object with .images attribute
+            if rec is None:
+                return None
+            if hasattr(rec, 'images') and hasattr(rec, 'cameras'):
+                return rec
+            # Some versions may return a list of Reconstruction objects
+            if isinstance(rec, (list, tuple)):
+                best = None
+                best_count = -1
+                for r in rec:
+                    if hasattr(r, 'images'):
+                        cnt = len(getattr(r, 'images', {}))
+                        if cnt > best_count:
+                            best = r
+                            best_count = cnt
+                return best
+            # Some may return a dict-like with 'images' and 'cameras'
+            if isinstance(rec, dict):
+                # Possibly nested under key like 'reconstruction' or similar
+                if 'images' in rec and 'cameras' in rec:
+                    return rec
+                for k in rec:
+                    v = rec[k]
+                    if isinstance(v, dict) and 'images' in v and 'cameras' in v:
+                        return v
+            return None
 
-        if reconstruction is None or len(reconstruction.images) == 0:
+        norm_rec = _select_reconstruction(reconstruction)
+        # Extract images and cameras generically
+        if norm_rec is None:
+            return {"success": False, "message": "Reconstruction object format unsupported (no images)", "output_dir": output_dir}
+
+        # Support both object-style and dict-style access
+        if hasattr(norm_rec, 'images'):
+            images_dict = norm_rec.images  # type: ignore
+        else:  # dict style
+            images_dict = norm_rec.get('images', {})  # type: ignore
+
+        if not images_dict:
             return {"success": False, "message": "No registered images", "output_dir": output_dir}
+
+        if hasattr(norm_rec, 'cameras'):
+            cameras_dict = norm_rec.cameras  # type: ignore
+        else:
+            cameras_dict = norm_rec.get('cameras', {})  # type: ignore
 
         # Camera intrinsics (first camera only)
         camera_params_out = {}
-        if reconstruction.cameras:
-            for cam_id, cam in reconstruction.cameras.items():
+        for cam_id, cam in (cameras_dict.items() if isinstance(cameras_dict, dict) else []):
+            # cam may be object or simple dict
+            if hasattr(cam, 'model'):
                 camera_params_out = {
                     "camera_id": cam_id,
                     "model": cam.model,
-                    "width": cam.width,
-                    "height": cam.height,
-                    "params": list(cam.params),
+                    "width": getattr(cam, 'width', None),
+                    "height": getattr(cam, 'height', None),
+                    "params": list(getattr(cam, 'params', [])),
                 }
-                break
+            elif isinstance(cam, dict):
+                camera_params_out = {
+                    "camera_id": cam_id,
+                    "model": cam.get('model'),
+                    "width": cam.get('width'),
+                    "height": cam.get('height'),
+                    "params": list(cam.get('params', [])),
+                }
+            break
 
         inv_map = {v: k for k, v in rename_map.items()}
         image_poses = {}
-        for image_id, image in reconstruction.images.items():
-            orig_id = inv_map.get(image.name, image.name)
+        for image_id, image in images_dict.items():
+            # Object or dict
+            if hasattr(image, 'name'):
+                name = image.name
+            else:
+                name = image.get('name') if isinstance(image, dict) else str(image_id)
+            orig_id = inv_map.get(name, name)
+            if hasattr(image, 'qvec') and hasattr(image, 'tvec'):
+                qvec = list(image.qvec)
+                tvec = list(image.tvec)
+                cam_id = getattr(image, 'camera_id', None)
+            else:
+                qvec = list(image.get('qvec', [])) if isinstance(image, dict) else []
+                tvec = list(image.get('tvec', [])) if isinstance(image, dict) else []
+                cam_id = image.get('camera_id') if isinstance(image, dict) else None
             image_poses[orig_id] = {
                 "image_id": image_id,
-                "qvec": list(image.qvec),
-                "tvec": list(image.tvec),
-                "camera_id": image.camera_id,
+                "qvec": qvec,
+                "tvec": tvec,
+                "camera_id": cam_id,
             }
 
         return {
