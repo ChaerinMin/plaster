@@ -30,5 +30,5 @@ if __name__ == "__main__":
         for ms in day_plaster["multisequences"]:
             print(f"Processing multisequence: {ms['name']}")
             dataloader = primer.Primer(args.source, day, ms["name"])
-            data = dataloader.get_overlapping(lookup_thresh_ms=20.0)
+            data = dataloader.get_overlapping(lookup_thresh_ms=int(20))
             print(data)
