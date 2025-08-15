@@ -25,11 +25,10 @@ if __name__ == "__main__":
     # Now let's use primer to get the data for spatial sensor calibration
     for day in source_plaster["days"]:
         print(f"Calibrating multisequences in day: {day}")
-        # Parse JSON in day directory to get multisequence names
         day_plaster = json.load(open(os.path.join(args.source, day, "plaster.json"), 'r'))
 
         for ms in day_plaster["multisequences"]:
             print(f"Processing multisequence: {ms['name']}")
             dataloader = primer.Primer(args.source, day, ms["name"])
-            data = dataloader.get_overlapping(lookup_thresh_ms=int(20))
+            data = dataloader.get_overlapping(lookup_thresh_ms=20.0)
             print(data)
