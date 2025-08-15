@@ -48,19 +48,13 @@ def _ensure_dir(path: str) -> str:
     return path
 
 
-def _normalize_frames(primer_data: Any) -> List[Dict[str, Any]]:
-    if primer_data is None:
+def _normalize_frames(frames: Any) -> List[Dict[str, Any]]:
+    if frames is None:
+        print("Empty primer data provided")
         return []
-    if isinstance(primer_data, dict) and "frames" in primer_data:
-        frames = primer_data["frames"]
-    else:
-        frames = primer_data
     norm = []
-    for f in frames:
-        if isinstance(f, dict):
-            norm.append(f)
-        elif isinstance(f, (list, tuple)) and len(f) >= 2:
-            norm.append({"id": f[0], "image": f[1]})
+    for ctr, f in enumerate(frames):
+        norm.append({"id": ctr, "image": f[1]})
     return norm
 
 
@@ -120,7 +114,6 @@ def calibrate_camera_from_primer(primer_data: Any,
     if pycolmap is None:
         return {"success": False, "message": "pycolmap not installed", "output_dir": output_dir}
 
-    print(primer_data)
     frames = _normalize_frames(primer_data)
     if len(frames) < min_images:
         return {"success": False, "message": f"Need >= {min_images} frames", "output_dir": output_dir}
