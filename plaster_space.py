@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # Now let's use primer to get the data for spatial sensor calibration
     for day in source_plaster["days"]:
-        print(f"Calibrating multisequences in day: {day['date']}")
+        print(f"Calibrating multisequences in day: {day}")
         # Parse JSON in day directory to get multisequence names
         day_plaster = json.load(open(os.path.join(args.source, day, "plaster.json"), 'r'))
 
