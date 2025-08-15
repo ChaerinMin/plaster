@@ -120,6 +120,7 @@ def calibrate_camera_from_primer(primer_data: Any,
     if pycolmap is None:
         return {"success": False, "message": "pycolmap not installed", "output_dir": output_dir}
 
+    print(primer_data)
     frames = _normalize_frames(primer_data)
     if len(frames) < min_images:
         return {"success": False, "message": f"Need >= {min_images} frames", "output_dir": output_dir}
