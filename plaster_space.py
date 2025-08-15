@@ -35,6 +35,7 @@ if __name__ == "__main__":
             # Perform camera calibration (best-effort) for this multisequence
             # Get all the frames from data
             frame_data = [m.get("frame") for m in data["members"]]
+            frame_data = frame_data[:10]
             calib_dir = os.path.join(args.source, day, ms["name"])
             calib_res = calibrate_camera_from_primer(
                 primer_data=frame_data,
