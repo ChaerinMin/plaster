@@ -33,9 +33,9 @@ For more details, see the [official Anaconda documentation](https://docs.anacond
 conda create -n plaster python=3.11 -y
 conda activate plaster
 
-# Install timetree
-pip install "git+ssh://git@github.com/brown-ivl/timetree.git@main"
+# Install primer and timetree
+pip install "git+ssh://git@github.com/brown-ivl/primer.git@main"
 
-# Install primer
-#pip install "git+ssh://git@github.com/brown-ivl/primer.git@main"
+# Install colmap
+pip install pycolmap
 ```

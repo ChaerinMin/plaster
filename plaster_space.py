@@ -4,6 +4,7 @@ from time_cache import TimeCache
 import os
 import json
 import primer
+from calibration import calibrate_camera_from_primer
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
 parser.add_argument("-s", "--source", type=str, help="Path to the source directory")
@@ -31,4 +32,14 @@ if __name__ == "__main__":
             print(f"Processing multisequence: {ms['name']}")
             dataloader = primer.Primer(args.source, day, ms["name"])
             data = dataloader.get_overlapping(lookup_thresh_ms=20)
-            print(data.keys())
+            # Perform camera calibration (best-effort) for this multisequence
+            calib_dir = os.path.join(args.source, day, ms["name"])
+            calib_res = calibrate_camera_from_primer(
+                primer_data=data,
+                output_dir=calib_dir,
+                camera_model="PINHOLE",
+                clear_previous=False,
+            )
+            print(f"Calibration: {calib_res.get('message')}")
+            break
+        break
