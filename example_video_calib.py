@@ -64,12 +64,8 @@ def _load_frames(video_path: str, num_frames: int, verbose: bool = False) -> Lis
 		print(f"Sampling {len(sample_indices)} frames out of {total}")
 
 	frames: List[Dict[str, Any]] = []
-	it = iter(loader)
 	for idx in range(total):
-		try:
-			frame = next(it)  # explicit next()
-		except StopIteration:  # pragma: no cover - unexpected early stop
-			break
+		frame = loader.get_frame(idx)
 		if idx in sample_indices:
 			image = _extract_image(frame)
 			if image is not None:
