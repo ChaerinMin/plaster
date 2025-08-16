@@ -30,31 +30,6 @@ def _load_frames(video_path: str, num_frames: int, verbose: bool = False) -> Lis
 	loader = FastVideoLoader(video_path)
 	total = loader.frame_count
 
-	if total is None or total <= 0:
-		# We'll just iterate until exhaustion and sample on the fly.
-		if verbose:
-			print("Total frame count unknown; sampling adaptively.")
-		target = num_frames
-		frames: List[Dict[str, Any]] = []
-		it = iter(loader)
-		idx = 0
-		while len(frames) < target:
-			try:
-				frame = next(it)  # Use next() explicitly as required
-			except StopIteration:
-				break
-			# Extract image array
-			image = _extract_image(frame)
-			if image is not None:
-				# Accept every frame if not enough frames yet, else probabilistic skip
-				remaining_needed = target - len(frames)
-				# Heuristic probability to accept to approach target smoothly
-				accept_prob = max(1.0, remaining_needed / max(1, target))  # often 1.0 early
-				if len(frames) < target or np.random.rand() < accept_prob:
-					frames.append({"id": idx, "image": image})
-			idx += 1
-		return frames
-
 	# Compute equally spaced indices
 	if num_frames >= total:
 		sample_indices = set(range(total))
@@ -67,30 +42,10 @@ def _load_frames(video_path: str, num_frames: int, verbose: bool = False) -> Lis
 	for idx in range(total):
 		frame = loader.get_frame(idx)
 		if idx in sample_indices:
-			image = _extract_image(frame)
-			if image is not None:
-				frames.append({"id": idx, "image": image})
+			frames.append(frame)
 		if len(frames) >= len(sample_indices):
 			break
 	return frames
-
-
-def _extract_image(frame: Any):  # type: ignore[return-type]
-	"""Normalize frame object to an image array.
-
-	Accepts:
-	- dict with one of: image, frame, img, data
-	- (id, image) tuple/list
-	- direct ndarray / tensor (returned as-is)
-	"""
-	if isinstance(frame, dict):
-		for key in ("image", "frame", "img", "data"):
-			if key in frame:
-				return frame[key]
-		return None
-	if isinstance(frame, (list, tuple)) and len(frame) >= 2:
-		return frame[1]
-	return frame
 
 
 def main():  # pragma: no cover - CLI entry
