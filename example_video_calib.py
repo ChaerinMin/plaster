@@ -1,5 +1,5 @@
 """Example script: calibrate camera intrinsics/extrinsics from uniformly
-sampled video frames using Primer.video's VideoDataLoader.
+sampled video frames using Primer.video's FastVideoLoader.
 
 Usage:
 	python example_video_calib.py --video /path/to/video.mp4 --output ./calib_out --num-frames 12
@@ -15,19 +15,19 @@ import sys
 from typing import Any, Dict, List
 import numpy as np
 
-from primer.video import VideoDataLoader  # type: ignore
+from primer.video import FastVideoLoader  # type: ignore
 from calibration import calibrate_camera_from_primer
 
 def _load_frames(video_path: str, num_frames: int, verbose: bool = False) -> List[Dict[str, Any]]:
 	"""Load and return a list of frame dicts with keys: id, image.
 
-	Uses VideoDataLoader + next() to iterate. Attempts to get total frames
+	Uses FastVideoLoader + next() to iterate. Attempts to get total frames
 	via attributes (num_frames / __len__). Falls back to sequential read.
 	"""
 	if not os.path.isfile(video_path):
 		raise FileNotFoundError(f"Video file not found: {video_path}")
 
-	loader = VideoDataLoader(video_path)
+	loader = FastVideoLoader(video_path)
 
 	total = None
 	for attr in ("num_frames", "n_frames", "length"):
