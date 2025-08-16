@@ -28,21 +28,7 @@ def _load_frames(video_path: str, num_frames: int, verbose: bool = False) -> Lis
 		raise FileNotFoundError(f"Video file not found: {video_path}")
 
 	loader = FastVideoLoader(video_path)
-
-	total = None
-	for attr in ("num_frames", "n_frames", "length"):
-		if hasattr(loader, attr):
-			val = getattr(loader, attr)
-			try:
-				total = int(val)
-			except (TypeError, ValueError):
-				continue
-			break
-	if total is None:
-		try:
-			total = len(loader)  # type: ignore[arg-type]
-		except Exception:
-			pass
+	total = loader.frame_count
 
 	if total is None or total <= 0:
 		# We'll just iterate until exhaustion and sample on the fly.
