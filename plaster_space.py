@@ -52,7 +52,7 @@ if __name__ == "__main__":
             frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"]]
             calib_dir = os.path.join(args.source, day, ms["name"], "calib")
             calib_res = calibrate_camera_from_primer(
-                frame_data=frame_data,
+                frames=frame_data,
                 output_dir=calib_dir,
                 clear_previous=args.force_reserialize,
             )
