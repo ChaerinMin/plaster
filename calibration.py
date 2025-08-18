@@ -37,22 +37,95 @@ import torch
 import numpy as np
 import pycolmap
 
+def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
+    """Normalize an input (torch.Tensor | np.ndarray) into a uint8 array acceptable by PIL.
+
+    Accepts shapes:
+      - H x W (grayscale)
+      - H x W x C (C in 1,3,4)
+      - C x H x W (C in 1,3,4)  (will transpose)
+
+    Handles dtypes float32/float64 (assumed in range 0-1 or 0-255) and integer types.
+    Returns None if the array cannot be interpreted as an image.
+    """
+    if img is None:
+        return None
+    if isinstance(img, torch.Tensor):
+        img = img.detach().cpu().numpy()
+    if not isinstance(img, np.ndarray):
+        return None
+    if img.ndim == 0:
+        return None
+
+    # Remove extraneous batch dimension if present: (1, C, H, W) or (1, H, W, C)
+    if img.ndim == 4 and img.shape[0] == 1:
+        img = img[0]
+
+    # CHW -> HWC if needed
+    if img.ndim == 3:
+        h, w, c = None, None, None
+        # Determine if first dim is channel dimension
+        if img.shape[0] in (1, 3, 4) and (img.shape[2] > 4 or img.shape[2] not in (1, 3, 4)):
+            # Likely CHW because last dim does not look like channels
+            img = np.transpose(img, (1, 2, 0))
+        elif img.shape[0] in (1, 3, 4) and img.shape[2] in (1, 3, 4) and img.shape[0] <= img.shape[2]:
+            # Ambiguous; assume CHW if height/width look large in positions 1/2
+            if img.shape[1] > 8 and img.shape[2] > 8:
+                img = np.transpose(img, (1, 2, 0))
+        # After possible transpose, if channel dimension is first still, transpose
+        if img.shape[0] in (1, 3, 4) and img.shape[2] > 4:
+            img = np.transpose(img, (1, 2, 0))
+
+    # If we have shape (C,H,W) still (rare fallback)
+    if img.ndim == 3 and img.shape[0] in (1,3,4) and img.shape[-1] not in (1,3,4):
+        img = np.transpose(img, (1,2,0))
+
+    # Squeeze single-channel dimension if grayscale
+    if img.ndim == 3 and img.shape[2] == 1:
+        img = img[:, :, 0]
+
+    # Convert dtype -> uint8
+    if np.issubdtype(img.dtype, np.floating):
+        # Heuristic: if max <= 1.0 assume 0-1 range
+        max_val = float(np.nanmax(img)) if img.size else 0.0
+        if max_val <= 1.0 + 1e-6:
+            img = img * 255.0
+        img = np.clip(img, 0, 255)
+        img = img.astype(np.uint8)
+    elif img.dtype != np.uint8:
+        # Scale larger integer types
+        info = np.iinfo(img.dtype) if np.issubdtype(img.dtype, np.integer) else None
+        if info and info.max > 255:
+            img = (img.astype(np.float32) / info.max) * 255.0
+            img = np.clip(img, 0, 255).astype(np.uint8)
+        else:
+            img = img.astype(np.uint8)
+
+    # Final sanity checks
+    if img.ndim == 3 and img.shape[2] not in (3, 4):
+        # Unexpected channel count
+        return None
+    if img.ndim not in (2, 3):
+        return None
+    return img
+
+
 def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[int, str]]:
-    # Write frames to files. frames are torch tensors
+    # Write frames to files. frames are torch tensors or ndarrays in various layouts.
     written: List[Tuple[int, str]] = []
     for f in frames:
         frame_id = f.get("id")
-        img = f.get("image")
+        raw_img = f.get("image")
+        img = _prepare_image_array(raw_img)
         if img is None:
+            print(f"Skipping frame {frame_id}: unsupported image shape/type {getattr(raw_img, 'shape', None)}")
             continue
-        if isinstance(img, torch.Tensor):
-            img = img.detach().cpu().numpy()
         out_path = os.path.join(image_dir, f"{frame_id}.jpg")
         try:
             from PIL import Image  # type: ignore
-            Image.fromarray(img.astype("uint8")).save(out_path, quality=95)
+            Image.fromarray(img).save(out_path, quality=95)
         except Exception as e:
-            print(f"Failed to write image {frame_id}: {e}")
+            print(f"Failed to write image {frame_id}: {e} (original shape {getattr(raw_img, 'shape', None)})")
             continue
         if os.path.exists(out_path):
             written.append((frame_id, out_path))
