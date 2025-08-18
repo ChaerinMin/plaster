@@ -204,13 +204,14 @@ def calibrate_camera_from_primer(frames: Any,
                     "params": cam.params.tolist()
                 }
                 print(json.dumps(cam_params, indent=4))
-                with open(os.path.join(output_dir, f"{cam.camera_id}.json"), "w") as f:
+                with open(os.path.join(output_dir, f"recon0_cam{cam.camera_id}.json"), "w") as f:
                     f.write(json.dumps(cam_params, indent=4))
         
                 # OpenCV undistort
                 os.makedirs(stage2_image_dir, exist_ok=True)
                 for id, dist_img_path in frame_path_list:
                     img = cv2.imread(dist_img_path)
+                    print(f'Undistorting with {cam.params.tolist()}')
                     undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
                     cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
 
