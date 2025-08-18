@@ -38,6 +38,8 @@ import numpy as np
 import pycolmap
 import glob
 import json
+from primer.helpers import undistort_images
+import cv2
 
 MAX_SIFT_FEATURES=25000
 
@@ -190,38 +192,43 @@ def calibrate_camera_from_primer(frames: Any,
             options=incremental_options
         )
         stage1_reconstruction[0].write(stage1_dir) # Write explicitly
-
+        
         # Undistort images
         stage2_image_dir = os.path.join(stage2_dir, "images")
-        undistort_options = pycolmap.UndistortCameraOptions()
-        undistort_options.max_image_size = 1920 # PARAM
-        pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir, undistort_options=undistort_options)
-        # Re-structure undistorted_image_dir
-        file_names = os.listdir(os.path.join(stage2_image_dir, "images"))
-        for file_name in file_names:
-            # print(f"Moving {file_name} to {stage2_image_dir}/")
-            shutil.move(os.path.join(stage2_image_dir, "images", file_name), os.path.join(stage2_image_dir, file_name))
-        shutil.rmtree(os.path.join(stage2_image_dir, "images"), ignore_errors=True)
-        shutil.rmtree(os.path.join(stage2_image_dir, "sparse"), ignore_errors=True)
-        shutil.rmtree(os.path.join(stage2_image_dir, "stereo"), ignore_errors=True)
-        sh_files = glob.glob(os.path.join(stage2_image_dir, "run-*.sh"))
-        for sh_file in sh_files:
-            shutil.rmtree(sh_file, ignore_errors=True)
-            
         # Print distortion parameters
-        if stage1_reconstruction is not None:
-            if len(stage1_reconstruction) > 0:
-                # Write out camera parameters as JSON
-                for cam in stage1_reconstruction[0].cameras.values():
-                    cam_params = {
-                        "model": cam_model,
-                        "params": cam.params.tolist()
-                    }
-                    print(json.dumps(cam_params, indent=4))
-                    # Write to file
-                    with open(os.path.join(output_dir, f"camera_{cam.camera_id}.json"), "w") as f:
-                        f.write(json.dumps(cam_params, indent=4))
+        if stage1_reconstruction is not None and len(stage1_reconstruction) > 0:
+            for cam in stage1_reconstruction[0].cameras.values():
+                cam_params = {
+                    "name": cam.camera_id,
+                    "model": cam_model,
+                    "params": cam.params.tolist()
+                }
+                print(json.dumps(cam_params, indent=4))
+                with open(os.path.join(output_dir, f"cam.{cam.camera_id}.json"), "w") as f:
+                    f.write(json.dumps(cam_params, indent=4))
+        
+                # OpenCV undistort
+                for id in frame_path_list:
+                    img = cv2.imread(os.path.join(stage1_dir, "images", f"{id}.jpg"))
+                    undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
+                    cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
 
+        # # COLMAP undistort
+        # undistort_options = pycolmap.UndistortCameraOptions()
+        # undistort_options.max_image_size = 1920 # PARAM
+        # pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir, undistort_options=undistort_options)
+        # # Re-structure undistorted_image_dir
+        # file_names = os.listdir(os.path.join(stage2_image_dir, "images"))
+        # for file_name in file_names:
+        #     # print(f"Moving {file_name} to {stage2_image_dir}/")
+        #     shutil.move(os.path.join(stage2_image_dir, "images", file_name), os.path.join(stage2_image_dir, file_name))
+        # shutil.rmtree(os.path.join(stage2_image_dir, "images"), ignore_errors=True)
+        # shutil.rmtree(os.path.join(stage2_image_dir, "sparse"), ignore_errors=True)
+        # shutil.rmtree(os.path.join(stage2_image_dir, "stereo"), ignore_errors=True)
+        # sh_files = glob.glob(os.path.join(stage2_image_dir, "run-*.sh"))
+        # for sh_file in sh_files:
+        #     shutil.rmtree(sh_file, ignore_errors=True)
+            
         print(f"Stage 1 ({cam_model}) calibration completed with {len(stage1_reconstruction)} models and {stage1_reconstruction[0].num_frames()} images for the first model.")
     except Exception as e:
         print(f"Stage 1 (fisheye) calibration failed: {e}. Not proceeding to Stage 2. Exiting.")
