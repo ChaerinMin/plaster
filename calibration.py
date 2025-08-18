@@ -167,6 +167,7 @@ def calibrate_camera_from_primer(frame_data: Any,
 
         pycolmap.match_exhaustive(database_path=stage1_database_path)
         
+        stage1_output_path = os.path.join(output_dir, "stage1")
         # Reconstruction
         incremental_options = pycolmap.IncrementalPipelineOptions()
         incremental_options.multiple_models = False # Avoid multiple models
@@ -175,13 +176,14 @@ def calibrate_camera_from_primer(frame_data: Any,
         reconstruction = pycolmap.incremental_mapping(
             database_path=stage1_database_path,
             image_path=image_dir,
-            output_path=output_dir,
+            output_path=stage1_output_path,
             options=incremental_options
         )
+        reconstruction[0].write(stage1_output_path)
 
         # Undistort images
         undistort_options = pycolmap.UndistortCameraOptions()
-        pycolmap.undistort_images(database_path=stage1_database_path, image_path=image_dir, output_path=undistorted_image_dir)
+        pycolmap.undistort_images(output_path=undistorted_image_dir, input_path=stage1_output_path, image_path=image_dir)
 
         # SIMPLE_PINHOLE, PINHOLE: Use these camera models, if your images are undistorted a priori. These use one and two focal length parameters, respectively. Note that even in the case of undistorted images, COLMAP could try to improve the intrinsics with a more complex camera model.
         # SIMPLE_RADIAL, RADIAL: This should be the camera model of choice, if the intrinsics are unknown and every image has a different camera calibration, e.g., in the case of Internet photos. Both models are simplified versions of the OPENCV model only modeling radial distortion effects with one and two parameters, respectively.
