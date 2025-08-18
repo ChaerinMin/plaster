@@ -188,6 +188,7 @@ def calibrate_camera_from_primer(frame_data: Any,
             output_path=stage1_dir,
             options=incremental_options
         )
+        stage1_reconstruction[0].write(stage1_dir) # Write explicitly
 
         # Undistort images
         stage2_image_dir = os.path.join(stage2_dir, "images")
