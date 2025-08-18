@@ -36,6 +36,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import torch
 import numpy as np
 import pycolmap
+import glob
+
+MAX_SIFT_FEATURES=25000
 
 def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
     """Normalize an input (torch.Tensor | np.ndarray) into a uint8 array acceptable by PIL.
@@ -144,13 +147,13 @@ def calibrate_camera_from_primer(frame_data: Any,
         print(f"Clearing previous output directory: {output_dir}")
         shutil.rmtree(output_dir, ignore_errors=True)
 
-    image_dir = os.path.join(output_dir, "images")
-    undistorted_image_dir = os.path.join(output_dir, "undistorted_images")
+    stage1_dir = os.path.join(output_dir, "stage1")
+    stage2_dir = os.path.join(output_dir, "stage2")
     os.makedirs(output_dir, exist_ok=True)
-    os.makedirs(image_dir, exist_ok=True)
-    os.makedirs(undistorted_image_dir, exist_ok=True)
+    os.makedirs(stage1_dir, exist_ok=True)
+    os.makedirs(stage2_dir, exist_ok=True)
 
-    frame_path_list = _write_images(frames, image_dir)
+    frame_path_list = _write_images(frames, os.path.join(stage1_dir, "images"))
     if len(frame_path_list) < min_images:
         return {"success": False, "message": f"Only {len(frame_path_list)} valid images", "output_dir": output_dir}
 
@@ -159,16 +162,16 @@ def calibrate_camera_from_primer(frame_data: Any,
     # Stage 2 takes the undistorted images and refines the camera parameters using a PINHOLE model
     try:
         print(f"Stage 1 (RADIAL_FISHEYE) calibration started")
-        stage1_database_path = os.path.join(output_dir, "stage1.db")
+        stage1_database_path = os.path.join(stage1_dir, "stage1.db")
+        stage1_image_dir = os.path.join(stage1_dir, "images")
 
         sift_options = pycolmap.SiftExtractionOptions()
-        sift_options.max_num_features = 24000 # Maximize number of features
+        sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
         # SIMPLE_RADIAL_FISHEYE, RADIAL_FISHEYE, OPENCV_FISHEYE, FOV, THIN_PRISM_FISHEYE, RAD_TAN_THIN_PRISM_FISHEYE: Use these camera models for fisheye lenses and note that all other models are not really capable of modeling the distortion effects of fisheye lenses. The FOV model is used by Google Project Tango (make sure to not initialize omega to zero).
-        pycolmap.extract_features(database_path=stage1_database_path, image_path=image_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model='RADIAL_FISHEYE')
+        pycolmap.extract_features(database_path=stage1_database_path, image_path=stage1_image_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model='RADIAL_FISHEYE')
 
         pycolmap.match_exhaustive(database_path=stage1_database_path)
         
-        stage1_output_path = os.path.join(output_dir, "stage1")
         # Reconstruction
         incremental_options = pycolmap.IncrementalPipelineOptions()
         incremental_options.multiple_models = False # Avoid multiple models
@@ -176,24 +179,28 @@ def calibrate_camera_from_primer(frame_data: Any,
         incremental_options.ba_global_function_tolerance = 0.000001
         stage1_reconstruction = pycolmap.incremental_mapping(
             database_path=stage1_database_path,
-            image_path=image_dir,
-            output_path=stage1_output_path,
+            image_path=stage1_image_dir,
+            output_path=stage1_dir,
             options=incremental_options
         )
-        stage1_reconstruction[0].write(stage1_output_path)
+        stage1_reconstruction[0].write(stage1_dir) # Write explicitly
 
         # Undistort images
+        stage2_image_dir = os.path.join(stage2_dir, "images")
         undistort_options = pycolmap.UndistortCameraOptions()
-        pycolmap.undistort_images(output_path=undistorted_image_dir, input_path=stage1_output_path, image_path=image_dir)
+        undistort_options.max_image_size = 1920 # PARAM
+        pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir)
         # Re-structure undistorted_image_dir
-        file_names = os.listdir(os.path.join(undistorted_image_dir, "images"))
+        file_names = os.listdir(os.path.join(stage2_image_dir, "images"))
         for file_name in file_names:
-            print(f"Moving {file_name} to {undistorted_image_dir}/")
-            shutil.move(os.path.join(undistorted_image_dir, "images", file_name), os.path.join(undistorted_image_dir, file_name))
-        shutil.rmtree(os.path.join(undistorted_image_dir, "images"), ignore_errors=True)
-        shutil.rmtree(os.path.join(undistorted_image_dir, "sparse"), ignore_errors=True)
-        shutil.rmtree(os.path.join(undistorted_image_dir, "stereo"), ignore_errors=True)
-        shutil.rmtree(os.path.join(undistorted_image_dir, "run-*.sh"), ignore_errors=True)
+            print(f"Moving {file_name} to {stage2_image_dir}/")
+            shutil.move(os.path.join(stage2_image_dir, "images", file_name), os.path.join(stage2_image_dir, file_name))
+        shutil.rmtree(os.path.join(stage2_image_dir, "images"), ignore_errors=True)
+        shutil.rmtree(os.path.join(stage2_image_dir, "sparse"), ignore_errors=True)
+        shutil.rmtree(os.path.join(stage2_image_dir, "stereo"), ignore_errors=True)
+        sh_files = glob.glob(os.path.join(stage2_image_dir, "run-*.sh"))
+        for sh_file in sh_files:
+            shutil.rmtree(sh_file, ignore_errors=True)
 
         print(f"Stage 1 (RADIAL_FISHEYE) calibration completed")
     except Exception as e:
@@ -202,17 +209,16 @@ def calibrate_camera_from_primer(frame_data: Any,
         
     try:
         print(f"Stage 2 (SIMPLE_PINHOLE) calibration started")
-        stage2_database_path = os.path.join(output_dir, "stage2.db")
+        stage2_database_path = os.path.join(stage2_dir, "stage2.db")
 
         sift_options = pycolmap.SiftExtractionOptions()
-        sift_options.max_num_features = 24000 # Maximize number of features
+        sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
         # SIMPLE_PINHOLE, PINHOLE: Use these camera models, if your images are undistorted a priori. These use one and two focal length parameters, respectively. Note that even in the case of undistorted images, COLMAP could try to improve the intrinsics with a more complex camera model.
         # OPENCV, FULL_OPENCV: Use these camera models, if you know the calibration parameters a priori. You can also try to let COLMAP estimate the parameters, if you share the intrinsics for multiple images. Note that the automatic estimation of parameters will most likely fail, if every image has a separate set of intrinsic parameters.        
-        pycolmap.extract_features(database_path=stage2_database_path, image_path=undistorted_image_dir, camera_mode=pycolmap.CameraMode.PER_IMAGE, camera_model='SIMPLE_PINHOLE')
+        pycolmap.extract_features(database_path=stage2_database_path, image_path=stage2_image_dir, camera_mode=pycolmap.CameraMode.PER_IMAGE, camera_model='SIMPLE_PINHOLE')
 
         pycolmap.match_exhaustive(database_path=stage2_database_path)
 
-        stage2_output_path = os.path.join(output_dir, "stage2")
         # Reconstruction
         incremental_options = pycolmap.IncrementalPipelineOptions()
         incremental_options.multiple_models = False # Avoid multiple models
@@ -220,11 +226,11 @@ def calibrate_camera_from_primer(frame_data: Any,
         incremental_options.ba_global_function_tolerance = 0.000001
         stage2_reconstruction = pycolmap.incremental_mapping(
             database_path=stage2_database_path,
-            image_path=undistorted_image_dir,
-            output_path=stage2_output_path,
+            image_path=stage2_image_dir,
+            output_path=stage2_dir,
             options=incremental_options
         )
-        stage2_reconstruction[0].write(stage2_output_path)
+        stage2_reconstruction[0].write(stage2_dir)
         print(f"Stage 2 (SIMPLE_PINHOLE) calibration completed")
 
         return "WIP"
