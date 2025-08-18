@@ -188,7 +188,6 @@ def calibrate_camera_from_primer(frame_data: Any,
             output_path=stage1_dir,
             options=incremental_options
         )
-        stage1_reconstruction[0].write(stage1_dir) # Write explicitly
 
         # Undistort images
         stage2_image_dir = os.path.join(stage2_dir, "images")
@@ -208,7 +207,7 @@ def calibrate_camera_from_primer(frame_data: Any,
             shutil.rmtree(sh_file, ignore_errors=True)
             
         # Print distortion parameters
-        print(f"Radial distortion parameters: {stage1_reconstruction[0].camera.intrinsics}")
+        # print(f"Radial distortion parameters: {stage1_reconstruction[0].camera.intrinsics}")
 
         print(f"Stage 1 (RADIAL_FISHEYE) calibration completed")
     except Exception as e:
@@ -238,15 +237,16 @@ def calibrate_camera_from_primer(frame_data: Any,
             output_path=stage2_dir,
             options=incremental_options
         )
-        stage2_reconstruction[0].write(stage2_dir)
-        stage2_reconstruction[0].write(output_dir) # Also write to the top level directory
+        stage2_reconstruction[0].write(output_dir) # Write the first reconstruction to the top level directory
         print(f"Stage 2 (SIMPLE_PINHOLE) calibration completed")
 
+        image_poses = stage2_reconstruction[0].num_frames()
+
         return {"success": True,
-                "message": f"Calibration succeeded ({len(image_poses)} images)",
+                "message": f"Calibration succeeded with {len(image_poses)} images",
                 "output_dir": output_dir,
-                "camera_params": camera_params_out,
-                "image_poses": image_poses,
+                # "camera_params": camera_params_out,
+                # "image_poses": image_poses,
                 "num_registered_images": len(image_poses)}
     except Exception as e:
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
