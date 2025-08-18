@@ -52,6 +52,7 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[in
             from PIL import Image  # type: ignore
             Image.fromarray(img.astype("uint8")).save(out_path, quality=95)
         except Exception as e:
+            print(f"Failed to write image {frame_id}: {e}")
             continue
         if os.path.exists(out_path):
             written.append((frame_id, out_path))
