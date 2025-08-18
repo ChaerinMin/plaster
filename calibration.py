@@ -174,17 +174,23 @@ def calibrate_camera_from_primer(frame_data: Any,
         incremental_options.multiple_models = False # Avoid multiple models
         incremental_options.max_num_models = 1
         incremental_options.ba_global_function_tolerance = 0.000001
-        reconstruction = pycolmap.incremental_mapping(
+        stage1_reconstruction = pycolmap.incremental_mapping(
             database_path=stage1_database_path,
             image_path=image_dir,
             output_path=stage1_output_path,
             options=incremental_options
         )
-        reconstruction[0].write(stage1_output_path)
+        stage1_reconstruction[0].write(stage1_output_path)
 
         # Undistort images
         undistort_options = pycolmap.UndistortCameraOptions()
         pycolmap.undistort_images(output_path=undistorted_image_dir, input_path=stage1_output_path, image_path=image_dir)
+        # Re-structure undistorted_image_dir
+        shutil.move(os.path.join(undistorted_image_dir, "images/*"), os.path.join(undistorted_image_dir,"/"))
+        shutil.rmtree(os.path.join(undistorted_image_dir, "images"), ignore_errors=True)
+        shutil.rmtree(os.path.join(undistorted_image_dir, "sparse"), ignore_errors=True)
+        shutil.rmtree(os.path.join(undistorted_image_dir, "stereo"), ignore_errors=True)
+        shutil.rmtree(os.path.join(undistorted_image_dir, "run-*.sh"), ignore_errors=True)
 
         print(f"Stage 1 (RADIAL_FISHEYE) calibration completed")
 
@@ -194,7 +200,6 @@ def calibrate_camera_from_primer(frame_data: Any,
     try:
         print(f"Stage 2 (SIMPLE_PINHOLE) calibration started")
         stage2_database_path = os.path.join(output_dir, "stage2.db")
-        undistorted_image_dir = os.path.join(undistorted_image_dir, "images")
 
         sift_options = pycolmap.SiftExtractionOptions()
         sift_options.max_num_features = 24000 # Maximize number of features
@@ -210,13 +215,13 @@ def calibrate_camera_from_primer(frame_data: Any,
         incremental_options.multiple_models = False # Avoid multiple models
         incremental_options.max_num_models = 1
         incremental_options.ba_global_function_tolerance = 0.000001
-        reconstruction = pycolmap.incremental_mapping(
+        stage2_reconstruction = pycolmap.incremental_mapping(
             database_path=stage2_database_path,
-            image_path=image_dir,
+            image_path=undistorted_image_dir,
             output_path=stage2_output_path,
             options=incremental_options
         )
-        reconstruction[0].write(stage2_output_path)
+        stage2_reconstruction[0].write(stage2_output_path)
         print(f"Stage 2 (SIMPLE_PINHOLE) calibration completed")
 
         return "WIP"
