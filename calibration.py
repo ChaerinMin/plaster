@@ -189,7 +189,7 @@ def calibrate_camera_from_primer(frame_data: Any,
         file_names = os.listdir(os.path.join(undistorted_image_dir, "images"))
         for file_name in file_names:
             print(f"Moving {file_name} to {undistorted_image_dir}/")
-            shutil.move(os.path.join(undistorted_image_dir, "images", file_name), os.path.join(undistorted_image_dir, "/"))
+            shutil.move(os.path.join(undistorted_image_dir, "images", file_name), os.path.join(undistorted_image_dir, file_name))
         shutil.rmtree(os.path.join(undistorted_image_dir, "images"), ignore_errors=True)
         shutil.rmtree(os.path.join(undistorted_image_dir, "sparse"), ignore_errors=True)
         shutil.rmtree(os.path.join(undistorted_image_dir, "stereo"), ignore_errors=True)
