@@ -37,6 +37,7 @@ import torch
 import numpy as np
 import pycolmap
 import glob
+import json
 
 MAX_SIFT_FEATURES=25000
 
@@ -207,10 +208,19 @@ def calibrate_camera_from_primer(frame_data: Any,
         for sh_file in sh_files:
             shutil.rmtree(sh_file, ignore_errors=True)
             
-        # # Print distortion parameters
-        # if stage1_reconstruction is not None:
-        #     if len(stage1_reconstruction) > 0:
-        #         print(f"Radial distortion parameters: {stage1_reconstruction[0].cameras[0].params}")
+        # Print distortion parameters
+        if stage1_reconstruction is not None:
+            if len(stage1_reconstruction) > 0:
+                # Write out camera parameters as JSON
+                for cam in stage1_reconstruction[0].cameras:
+                    cam_params = {
+                        "model": cam.model,
+                        "params": cam.params.tolist()
+                    }
+                    print(json.dumps(cam_params, indent=4))
+                    # Write to file
+                    with open(os.path.join(stage1_dir, f"camera_{cam.id}.json"), "w") as f:
+                        f.write(json.dumps(cam_params, indent=4))
 
         print(f"Stage 1 (RADIAL_FISHEYE) calibration completed")
     except Exception as e:
@@ -243,13 +253,13 @@ def calibrate_camera_from_primer(frame_data: Any,
         stage2_reconstruction[0].write(output_dir) # Write the first reconstruction to the top level directory
         print(f"Stage 2 (SIMPLE_PINHOLE) calibration completed")
 
-        image_poses = stage2_reconstruction[0].num_frames()
+        num_poses_success = stage2_reconstruction[0].num_frames()
 
         return {"success": True,
-                "message": f"Calibration succeeded with {len(image_poses)} images",
+                "message": f"Calibration succeeded with {num_poses_success} images",
                 "output_dir": output_dir,
                 # "camera_params": camera_params_out,
                 # "image_poses": image_poses,
-                "num_registered_images": len(image_poses)}
+                "num_registered_images": num_poses_success}
     except Exception as e:
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
