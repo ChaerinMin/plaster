@@ -174,7 +174,8 @@ def calibrate_camera_from_primer(frame_data: Any,
         sift_options = pycolmap.SiftExtractionOptions()
         sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
         # SIMPLE_RADIAL_FISHEYE, RADIAL_FISHEYE, OPENCV_FISHEYE, FOV, THIN_PRISM_FISHEYE, RAD_TAN_THIN_PRISM_FISHEYE: Use these camera models for fisheye lenses and note that all other models are not really capable of modeling the distortion effects of fisheye lenses. The FOV model is used by Google Project Tango (make sure to not initialize omega to zero).
-        pycolmap.extract_features(database_path=stage1_database_path, image_path=stage1_image_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model='OPENCV_FISHEYE', sift_options=sift_options)
+        cam_model = 'OPENCV_FISHEYE'
+        pycolmap.extract_features(database_path=stage1_database_path, image_path=stage1_image_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model=cam_model, sift_options=sift_options)
 
         pycolmap.match_exhaustive(database_path=stage1_database_path)
         
@@ -214,12 +215,12 @@ def calibrate_camera_from_primer(frame_data: Any,
                 # Write out camera parameters as JSON
                 for cam in stage1_reconstruction[0].cameras.values():
                     cam_params = {
-                        "model": cam.model,
+                        "model": cam_model,
                         "params": cam.params.tolist()
                     }
                     print(json.dumps(cam_params, indent=4))
                     # Write to file
-                    with open(os.path.join(stage1_dir, f"camera_{cam.id}.json"), "w") as f:
+                    with open(os.path.join(stage1_dir, f"camera_{cam.camera_id}.json"), "w") as f:
                         f.write(json.dumps(cam_params, indent=4))
 
         print(f"Stage 1 (RADIAL_FISHEYE) calibration completed")
