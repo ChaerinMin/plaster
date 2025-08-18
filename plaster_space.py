@@ -61,7 +61,7 @@ if __name__ == "__main__":
             calib_res = calibrate_camera_from_primer(
                 frame_data=frame_data,
                 output_dir=calib_dir,
-                camera_model="OPENCV_FISHEYE",
+                camera_model="FULL_OPENCV",
                 clear_previous=False,
             )
             print(f"Calibration: {calib_res.get('message')}")
