@@ -186,16 +186,19 @@ def calibrate_camera_from_primer(frame_data: Any,
         undistort_options = pycolmap.UndistortCameraOptions()
         pycolmap.undistort_images(output_path=undistorted_image_dir, input_path=stage1_output_path, image_path=image_dir)
         # Re-structure undistorted_image_dir
-        shutil.move(os.path.join(undistorted_image_dir, "images/*"), os.path.join(undistorted_image_dir,"/"))
+        file_names = os.listdir(os.path.join(undistorted_image_dir, "images"))
+        for file_name in file_names:
+            print(f"Moving {file_name} to {undistorted_image_dir}/")
+            shutil.move(os.path.join(undistorted_image_dir, "images", file_name), os.path.join(undistorted_image_dir, "/"))
         shutil.rmtree(os.path.join(undistorted_image_dir, "images"), ignore_errors=True)
         shutil.rmtree(os.path.join(undistorted_image_dir, "sparse"), ignore_errors=True)
         shutil.rmtree(os.path.join(undistorted_image_dir, "stereo"), ignore_errors=True)
         shutil.rmtree(os.path.join(undistorted_image_dir, "run-*.sh"), ignore_errors=True)
 
         print(f"Stage 1 (RADIAL_FISHEYE) calibration completed")
-
     except Exception as e:
-        print(f"Stage 1 (fisheye) calibration failed: {e}")
+        print(f"Stage 1 (fisheye) calibration failed: {e}. Not proceeding to Stage 2. Exiting.")
+        return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir} 
         
     try:
         print(f"Stage 2 (SIMPLE_PINHOLE) calibration started")
