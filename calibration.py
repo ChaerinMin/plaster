@@ -116,6 +116,8 @@ def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
 def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[int, str]]:
     # Write frames to files. frames are torch tensors or ndarrays in various layouts.
     written: List[Tuple[int, str]] = []
+    if not os.path.exists(image_dir):
+        os.makedirs(image_dir, exist_ok=True)
     for f in frames:
         frame_id = f.get("id")
         raw_img = f.get("image")
@@ -201,6 +203,9 @@ def calibrate_camera_from_primer(frame_data: Any,
         sh_files = glob.glob(os.path.join(stage2_image_dir, "run-*.sh"))
         for sh_file in sh_files:
             shutil.rmtree(sh_file, ignore_errors=True)
+            
+        # Print distortion parameters
+        print(f"Radial distortion parameters: {stage1_reconstruction[0].camera.intrinsics}")
 
         print(f"Stage 1 (RADIAL_FISHEYE) calibration completed")
     except Exception as e:
