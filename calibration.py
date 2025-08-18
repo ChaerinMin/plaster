@@ -207,29 +207,30 @@ def calibrate_camera_from_primer(frames: Any,
                 with open(os.path.join(output_dir, f"recon0_cam{cam.camera_id}.json"), "w") as f:
                     f.write(json.dumps(cam_params, indent=4))
         
-                # OpenCV undistort
-                os.makedirs(stage2_image_dir, exist_ok=True)
-                for id, dist_img_path in frame_path_list:
-                    img = cv2.imread(dist_img_path)
-                    print(f'Undistorting with {cam.params.tolist()}')
-                    undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
-                    cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
+                # # OpenCV undistort
+                # os.makedirs(stage2_image_dir, exist_ok=True)
+                # for id, dist_img_path in frame_path_list:
+                #     img = cv2.imread(dist_img_path)
+                #     print(f'Undistorting with {cam.params.tolist()}')
+                #     undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
+                    
+                #     cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
 
-        # # COLMAP undistort
-        # undistort_options = pycolmap.UndistortCameraOptions()
-        # undistort_options.max_image_size = 1920 # PARAM
-        # pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir, undistort_options=undistort_options)
-        # # Re-structure undistorted_image_dir
-        # file_names = os.listdir(os.path.join(stage2_image_dir, "images"))
-        # for file_name in file_names:
-        #     # print(f"Moving {file_name} to {stage2_image_dir}/")
-        #     shutil.move(os.path.join(stage2_image_dir, "images", file_name), os.path.join(stage2_image_dir, file_name))
-        # shutil.rmtree(os.path.join(stage2_image_dir, "images"), ignore_errors=True)
-        # shutil.rmtree(os.path.join(stage2_image_dir, "sparse"), ignore_errors=True)
-        # shutil.rmtree(os.path.join(stage2_image_dir, "stereo"), ignore_errors=True)
-        # sh_files = glob.glob(os.path.join(stage2_image_dir, "run-*.sh"))
-        # for sh_file in sh_files:
-        #     shutil.rmtree(sh_file, ignore_errors=True)
+        # COLMAP undistort
+        undistort_options = pycolmap.UndistortCameraOptions()
+        undistort_options.max_image_size = 1920 # PARAM
+        pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir, undistort_options=undistort_options)
+        # Re-structure undistorted_image_dir
+        file_names = os.listdir(os.path.join(stage2_image_dir, "images"))
+        for file_name in file_names:
+            # print(f"Moving {file_name} to {stage2_image_dir}/")
+            shutil.move(os.path.join(stage2_image_dir, "images", file_name), os.path.join(stage2_image_dir, file_name))
+        shutil.rmtree(os.path.join(stage2_image_dir, "images"), ignore_errors=True)
+        shutil.rmtree(os.path.join(stage2_image_dir, "sparse"), ignore_errors=True)
+        shutil.rmtree(os.path.join(stage2_image_dir, "stereo"), ignore_errors=True)
+        sh_files = glob.glob(os.path.join(stage2_image_dir, "run-*.sh"))
+        for sh_file in sh_files:
+            shutil.rmtree(sh_file, ignore_errors=True)
             
         print(f"Stage 1 ({cam_model}) calibration completed with {len(stage1_reconstruction)} models and {stage1_reconstruction[0].num_frames()} images for the first model.")
     except Exception as e:
