@@ -33,7 +33,7 @@ if __name__ == "__main__":
     if True:
         if True:
             ms = dict()
-            args.source = "~/data/brics/non-pii/brics-studio"
+            args.source = "/oscar/data/ssrinath//brics/non-pii/brics-studio"
             day = "2025-03-28" # brics-studio, multisequence000001
             ms["name"] = "multisequence000001"
             # Lawn
