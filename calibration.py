@@ -194,12 +194,13 @@ def calibrate_camera_from_primer(frame_data: Any,
     try:
         print(f"Stage 2 (SIMPLE_PINHOLE) calibration started")
         stage2_database_path = os.path.join(output_dir, "stage2.db")
+        undistorted_image_dir = os.path.join(undistorted_image_dir, "images")
 
         sift_options = pycolmap.SiftExtractionOptions()
         sift_options.max_num_features = 24000 # Maximize number of features
         # SIMPLE_PINHOLE, PINHOLE: Use these camera models, if your images are undistorted a priori. These use one and two focal length parameters, respectively. Note that even in the case of undistorted images, COLMAP could try to improve the intrinsics with a more complex camera model.
         # OPENCV, FULL_OPENCV: Use these camera models, if you know the calibration parameters a priori. You can also try to let COLMAP estimate the parameters, if you share the intrinsics for multiple images. Note that the automatic estimation of parameters will most likely fail, if every image has a separate set of intrinsic parameters.        
-        pycolmap.extract_features(database_path=stage2_database_path, image_path=image_dir, camera_mode=pycolmap.CameraMode.PER_IMAGE, camera_model='SIMPLE_PINHOLE')
+        pycolmap.extract_features(database_path=stage2_database_path, image_path=undistorted_image_dir, camera_mode=pycolmap.CameraMode.PER_IMAGE, camera_model='SIMPLE_PINHOLE')
 
         pycolmap.match_exhaustive(database_path=stage2_database_path)
 
