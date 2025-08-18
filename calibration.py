@@ -139,11 +139,14 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[in
 def calibrate_camera_from_primer(frame_data: Any,
                                  output_dir: str,
                                  clear_previous: bool = False,
-                                 min_images: int = 5,
-                                 verbose: bool = True) -> Dict[str, Any]:
+                                 min_images: int = 5) -> Dict[str, Any]:
     frames = [{"id": str(ctr).zfill(3), "image": f} for ctr, f in enumerate(frame_data)]
     if len(frames) < min_images:
         return {"success": False, "message": f"Need >= {min_images} frames", "output_dir": output_dir}
+    
+    if clear_previous == False and os.path.isdir(output_dir):
+        print(f"Output directory already exists: {output_dir}")
+        return {"success": False, "message": "Output directory already exists", "output_dir": output_dir}
 
     if clear_previous and os.path.isdir(output_dir):
         print(f"Clearing previous output directory: {output_dir}")
@@ -191,7 +194,7 @@ def calibrate_camera_from_primer(frame_data: Any,
         stage2_image_dir = os.path.join(stage2_dir, "images")
         undistort_options = pycolmap.UndistortCameraOptions()
         undistort_options.max_image_size = 1920 # PARAM
-        pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir)
+        pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir, undistort_options=undistort_options)
         # Re-structure undistorted_image_dir
         file_names = os.listdir(os.path.join(stage2_image_dir, "images"))
         for file_name in file_names:
@@ -236,14 +239,14 @@ def calibrate_camera_from_primer(frame_data: Any,
             options=incremental_options
         )
         stage2_reconstruction[0].write(stage2_dir)
+        stage2_reconstruction[0].write(output_dir) # Also write to the top level directory
         print(f"Stage 2 (SIMPLE_PINHOLE) calibration completed")
 
-        return "WIP"
-        # return {"success": True,
-        #         "message": f"Calibration succeeded ({len(image_poses)} images)",
-        #         "output_dir": output_dir,
-        #         "camera_params": camera_params_out,
-        #         "image_poses": image_poses,
-        #         "num_registered_images": len(image_poses)}
+        return {"success": True,
+                "message": f"Calibration succeeded ({len(image_poses)} images)",
+                "output_dir": output_dir,
+                "camera_params": camera_params_out,
+                "image_poses": image_poses,
+                "num_registered_images": len(image_poses)}
     except Exception as e:
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
