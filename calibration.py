@@ -158,6 +158,7 @@ def calibrate_camera_from_primer(frame_data: Any,
     # Stage 1 assumes a single camera model for all cameras, extracts distortion parameters and undistorts the images
     # Stage 2 takes the undistorted images and refines the camera parameters using a PINHOLE model
     try:
+        print(f"Stage 1 (RADIAL_FISHEYE) calibration started")
         stage1_database_path = os.path.join(output_dir, "stage1.db")
 
         sift_options = pycolmap.SiftExtractionOptions()
@@ -185,11 +186,37 @@ def calibrate_camera_from_primer(frame_data: Any,
         undistort_options = pycolmap.UndistortCameraOptions()
         pycolmap.undistort_images(output_path=undistorted_image_dir, input_path=stage1_output_path, image_path=image_dir)
 
+        print(f"Stage 1 (RADIAL_FISHEYE) calibration completed")
+
+    except Exception as e:
+        print(f"Stage 1 (fisheye) calibration failed: {e}")
+        
+    try:
+        print(f"Stage 2 (SIMPLE_PINHOLE) calibration started")
+        stage2_database_path = os.path.join(output_dir, "stage2.db")
+
+        sift_options = pycolmap.SiftExtractionOptions()
+        sift_options.max_num_features = 24000 # Maximize number of features
         # SIMPLE_PINHOLE, PINHOLE: Use these camera models, if your images are undistorted a priori. These use one and two focal length parameters, respectively. Note that even in the case of undistorted images, COLMAP could try to improve the intrinsics with a more complex camera model.
-        # SIMPLE_RADIAL, RADIAL: This should be the camera model of choice, if the intrinsics are unknown and every image has a different camera calibration, e.g., in the case of Internet photos. Both models are simplified versions of the OPENCV model only modeling radial distortion effects with one and two parameters, respectively.
+        # OPENCV, FULL_OPENCV: Use these camera models, if you know the calibration parameters a priori. You can also try to let COLMAP estimate the parameters, if you share the intrinsics for multiple images. Note that the automatic estimation of parameters will most likely fail, if every image has a separate set of intrinsic parameters.        
+        pycolmap.extract_features(database_path=stage2_database_path, image_path=image_dir, camera_mode=pycolmap.CameraMode.PER_IMAGE, camera_model='SIMPLE_PINHOLE')
 
-        # OPENCV, FULL_OPENCV: Use these camera models, if you know the calibration parameters a priori. You can also try to let COLMAP estimate the parameters, if you share the intrinsics for multiple images. Note that the automatic estimation of parameters will most likely fail, if every image has a separate set of intrinsic parameters.
+        pycolmap.match_exhaustive(database_path=stage2_database_path)
 
+        stage2_output_path = os.path.join(output_dir, "stage2")
+        # Reconstruction
+        incremental_options = pycolmap.IncrementalPipelineOptions()
+        incremental_options.multiple_models = False # Avoid multiple models
+        incremental_options.max_num_models = 1
+        incremental_options.ba_global_function_tolerance = 0.000001
+        reconstruction = pycolmap.incremental_mapping(
+            database_path=stage2_database_path,
+            image_path=image_dir,
+            output_path=stage2_output_path,
+            options=incremental_options
+        )
+        reconstruction[0].write(stage2_output_path)
+        print(f"Stage 2 (SIMPLE_PINHOLE) calibration completed")
 
         return "WIP"
         # return {"success": True,

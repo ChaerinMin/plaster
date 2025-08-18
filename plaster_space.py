@@ -56,4 +56,4 @@ if __name__ == "__main__":
                 output_dir=calib_dir,
                 clear_previous=args.force_reserialize,
             )
-            print(f"Calibration: {calib_res.get('message')}")
+            print(f"Calibration: {calib_res}")
