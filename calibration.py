@@ -155,7 +155,7 @@ def calibrate_camera_from_primer(frame_data: Any,
         return {"success": False, "message": f"Only {len(frame_path_list)} valid images", "output_dir": output_dir}
 
     try:
-        database_path = os.path.join(output_dir, "database.db")
+        stage1_database_path = os.path.join(output_dir, "stage1.db")
 
         # We will follow a 2-step strategy
         # Step 1 assumes a single camera model for all cameras, extracts distortion parameters and undistorts the images
@@ -166,10 +166,10 @@ def calibrate_camera_from_primer(frame_data: Any,
         sift_options.max_num_features = 24000 # Maximize number of features
 
         # SIMPLE_RADIAL_FISHEYE, RADIAL_FISHEYE, OPENCV_FISHEYE, FOV, THIN_PRISM_FISHEYE, RAD_TAN_THIN_PRISM_FISHEYE: Use these camera models for fisheye lenses and note that all other models are not really capable of modeling the distortion effects of fisheye lenses. The FOV model is used by Google Project Tango (make sure to not initialize omega to zero).
-        pycolmap.extract_features(database_path=database_path, image_path=image_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model=pycolmap.RADIAL_FISHEYE)
+        pycolmap.extract_features(database_path=stage1_database_path, image_path=image_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model='RADIAL_FISHEYE')
 
         # Feature Matching
-        pycolmap.match_exhaustive(database_path=database_path)
+        pycolmap.match_exhaustive(database_path=stage1_database_path)
         
         # Reconstruction
         incremental_options = pycolmap.IncrementalPipelineOptions()
@@ -177,7 +177,7 @@ def calibrate_camera_from_primer(frame_data: Any,
         # incremental_options.max_num_models = 1
         incremental_options.ba_global_function_tolerance = 0.000001
         reconstruction = pycolmap.incremental_mapping(
-            database_path=database_path,
+            database_path=stage1_database_path,
             image_path=image_dir,
             output_path=output_dir,
             options=incremental_options
