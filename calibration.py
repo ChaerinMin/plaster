@@ -213,7 +213,6 @@ def calibrate_camera_from_primer(frames: Any,
                     img = cv2.imread(dist_img_path)
                     print(f'Undistorting with {cam.params.tolist()}')
                     undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
-                    
                     cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
 
         # # COLMAP undistort
