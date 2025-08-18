@@ -198,7 +198,7 @@ def calibrate_camera_from_primer(frame_data: Any,
         # Re-structure undistorted_image_dir
         file_names = os.listdir(os.path.join(stage2_image_dir, "images"))
         for file_name in file_names:
-            print(f"Moving {file_name} to {stage2_image_dir}/")
+            # print(f"Moving {file_name} to {stage2_image_dir}/")
             shutil.move(os.path.join(stage2_image_dir, "images", file_name), os.path.join(stage2_image_dir, file_name))
         shutil.rmtree(os.path.join(stage2_image_dir, "images"), ignore_errors=True)
         shutil.rmtree(os.path.join(stage2_image_dir, "sparse"), ignore_errors=True)
@@ -207,10 +207,10 @@ def calibrate_camera_from_primer(frame_data: Any,
         for sh_file in sh_files:
             shutil.rmtree(sh_file, ignore_errors=True)
             
-        # Print distortion parameters
-        if stage1_reconstruction is not None:
-            if len(stage1_reconstruction) > 0:
-                print(f"Radial distortion parameters: {stage1_reconstruction[0].cameras[0].params}")
+        # # Print distortion parameters
+        # if stage1_reconstruction is not None:
+        #     if len(stage1_reconstruction) > 0:
+        #         print(f"Radial distortion parameters: {stage1_reconstruction[0].cameras[0].params}")
 
         print(f"Stage 1 (RADIAL_FISHEYE) calibration completed")
     except Exception as e:
