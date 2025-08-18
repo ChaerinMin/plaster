@@ -207,7 +207,9 @@ def calibrate_camera_from_primer(frame_data: Any,
             shutil.rmtree(sh_file, ignore_errors=True)
             
         # Print distortion parameters
-        # print(f"Radial distortion parameters: {stage1_reconstruction[0].camera.intrinsics}")
+        if stage1_reconstruction is not None:
+            if len(stage1_reconstruction) > 0:
+                print(f"Radial distortion parameters: {stage1_reconstruction[0].cameras[0].params}")
 
         print(f"Stage 1 (RADIAL_FISHEYE) calibration completed")
     except Exception as e:
