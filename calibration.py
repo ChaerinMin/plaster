@@ -188,6 +188,9 @@ def calibrate_camera_from_primer(frame_data: Any,
         database_path = os.path.join(output_dir, "database.db")
         
         # Feature extraction
+        sift_options = pycolmap.SiftExtractionOptions()
+        sift_options.max_num_features = 24000 # Maximize number of features
+
         pycolmap.extract_features(database_path=database_path, image_path=image_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model=camera_model)
 
         # Feature Matching
