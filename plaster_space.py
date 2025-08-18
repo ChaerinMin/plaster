@@ -49,7 +49,8 @@ if __name__ == "__main__":
             dataloader = primer.Primer(args.source, day, ms["name"])
             data = dataloader.get_overlapping(lookup_thresh_ms=20)
 
-            frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"]]
+            frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"][:10]]
+            print(frame_data.__len__())
             calib_dir = os.path.join(args.source, day, ms["name"], "calib")
             calib_res = calibrate_camera_from_primer(
                 frames=frame_data,
