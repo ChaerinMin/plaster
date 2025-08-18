@@ -204,7 +204,7 @@ def calibrate_camera_from_primer(frames: Any,
                     "params": cam.params.tolist()
                 }
                 print(json.dumps(cam_params, indent=4))
-                with open(os.path.join(output_dir, f"recon0_cam{cam.camera_id}.json"), "w") as f:
+                with open(os.path.join(output_dir, f"shared_distortion_params.json"), "w") as f:
                     f.write(json.dumps(cam_params, indent=4))
         
                 # OpenCV undistort
@@ -214,6 +214,8 @@ def calibrate_camera_from_primer(frames: Any,
                     print(f'Undistorting with {cam.params.tolist()}')
                     undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
                     cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
+
+                break # Since we are assuming only 1 set of distortion parameters for all cameras
 
         # # COLMAP undistort
         # undistort_options = pycolmap.UndistortCameraOptions()
