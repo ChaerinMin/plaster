@@ -137,11 +137,10 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[in
             written.append((frame_id, out_path))
     return written
 
-def calibrate_camera_from_primer(frame_data: Any,
+def calibrate_camera_from_primer(frames: Any,
                                  output_dir: str,
                                  clear_previous: bool = False,
                                  min_images: int = 5) -> Dict[str, Any]:
-    frames = [{"id": str(ctr).zfill(3), "image": f} for ctr, f in enumerate(frame_data)]
     if len(frames) < min_images:
         return {"success": False, "message": f"Need >= {min_images} frames", "output_dir": output_dir}
     
