@@ -62,11 +62,12 @@ def calibrate_camera_from_primer(frame_data: Any,
                                  clear_previous: bool = False,
                                  min_images: int = 5,
                                  verbose: bool = True) -> Dict[str, Any]:
-    frames = [{"id": str(ctr).zfill(3), "image": f} for ctr, f in enumerate(frames)]
+    frames = [{"id": str(ctr).zfill(3), "image": f} for ctr, f in enumerate(frame_data)]
     if len(frames) < min_images:
         return {"success": False, "message": f"Need >= {min_images} frames", "output_dir": output_dir}
 
     if clear_previous and os.path.isdir(output_dir):
+        print(f"Clearing previous output directory: {output_dir}")
         shutil.rmtree(output_dir, ignore_errors=True)
 
     image_dir = os.path.join(output_dir, "images")
