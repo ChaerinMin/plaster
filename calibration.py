@@ -144,9 +144,9 @@ def calibrate_camera_from_primer(frame_data: Any,
     if len(frames) < min_images:
         return {"success": False, "message": f"Need >= {min_images} frames", "output_dir": output_dir}
     
-    if clear_previous == False and os.path.isdir(output_dir):
-        print(f"Output directory already exists: {output_dir}")
-        return {"success": False, "message": "Output directory already exists", "output_dir": output_dir}
+    # if clear_previous == False and os.path.isdir(output_dir):
+    #     print(f"Output directory already exists: {output_dir}")
+    #     return {"success": False, "message": "Output directory already exists", "output_dir": output_dir}
 
     if clear_previous and os.path.isdir(output_dir):
         print(f"Clearing previous output directory: {output_dir}")
