@@ -219,7 +219,7 @@ def calibrate_camera_from_primer(frames: Any,
                     }
                     print(json.dumps(cam_params, indent=4))
                     # Write to file
-                    with open(os.path.join(stage1_dir, f"camera_{cam.camera_id}.json"), "w") as f:
+                    with open(os.path.join(output_dir, f"camera_{cam.camera_id}.json"), "w") as f:
                         f.write(json.dumps(cam_params, indent=4))
 
         print(f"Stage 1 ({cam_model}) calibration completed with {len(stage1_reconstruction)} models and {stage1_reconstruction[0].num_frames()} images for the first model.")
