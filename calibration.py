@@ -154,27 +154,23 @@ def calibrate_camera_from_primer(frame_data: Any,
     if len(frame_path_list) < min_images:
         return {"success": False, "message": f"Only {len(frame_path_list)} valid images", "output_dir": output_dir}
 
+    # We will follow a 2-stage strategy
+    # Stage 1 assumes a single camera model for all cameras, extracts distortion parameters and undistorts the images
+    # Stage 2 takes the undistorted images and refines the camera parameters using a PINHOLE model
     try:
         stage1_database_path = os.path.join(output_dir, "stage1.db")
 
-        # We will follow a 2-step strategy
-        # Step 1 assumes a single camera model for all cameras, extracts distortion parameters and undistorts the images
-        # Step 2 takes the undistorted images and refines the camera parameters using a PINHOLE model
-
-        # Feature extraction
         sift_options = pycolmap.SiftExtractionOptions()
         sift_options.max_num_features = 24000 # Maximize number of features
-
         # SIMPLE_RADIAL_FISHEYE, RADIAL_FISHEYE, OPENCV_FISHEYE, FOV, THIN_PRISM_FISHEYE, RAD_TAN_THIN_PRISM_FISHEYE: Use these camera models for fisheye lenses and note that all other models are not really capable of modeling the distortion effects of fisheye lenses. The FOV model is used by Google Project Tango (make sure to not initialize omega to zero).
         pycolmap.extract_features(database_path=stage1_database_path, image_path=image_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model='RADIAL_FISHEYE')
 
-        # Feature Matching
         pycolmap.match_exhaustive(database_path=stage1_database_path)
         
         # Reconstruction
         incremental_options = pycolmap.IncrementalPipelineOptions()
-        # incremental_options.multiple_models = False # Avoid multiple models
-        # incremental_options.max_num_models = 1
+        incremental_options.multiple_models = False # Avoid multiple models
+        incremental_options.max_num_models = 1
         incremental_options.ba_global_function_tolerance = 0.000001
         reconstruction = pycolmap.incremental_mapping(
             database_path=stage1_database_path,
@@ -182,15 +178,16 @@ def calibrate_camera_from_primer(frame_data: Any,
             output_path=output_dir,
             options=incremental_options
         )
-        
+
+        # Undistort images
+        undistort_options = pycolmap.UndistortCameraOptions()
+        pycolmap.undistort_images(database_path=stage1_database_path, image_path=image_dir, output_path=undistorted_image_dir)
+
         # SIMPLE_PINHOLE, PINHOLE: Use these camera models, if your images are undistorted a priori. These use one and two focal length parameters, respectively. Note that even in the case of undistorted images, COLMAP could try to improve the intrinsics with a more complex camera model.
         # SIMPLE_RADIAL, RADIAL: This should be the camera model of choice, if the intrinsics are unknown and every image has a different camera calibration, e.g., in the case of Internet photos. Both models are simplified versions of the OPENCV model only modeling radial distortion effects with one and two parameters, respectively.
 
         # OPENCV, FULL_OPENCV: Use these camera models, if you know the calibration parameters a priori. You can also try to let COLMAP estimate the parameters, if you share the intrinsics for multiple images. Note that the automatic estimation of parameters will most likely fail, if every image has a separate set of intrinsic parameters.
 
-        
-        # Undistort images
-        # pycolmap.undistort_images(database_path=database_path, image_path=image_dir, output_path=output_dir)
 
         return "WIP"
         # return {"success": True,
