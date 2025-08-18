@@ -208,6 +208,7 @@ def calibrate_camera_from_primer(frames: Any,
                     f.write(json.dumps(cam_params, indent=4))
         
                 # OpenCV undistort
+                os.makedirs(stage2_image_dir, exist_ok=True)
                 for id in frame_path_list:
                     img = cv2.imread(os.path.join(stage1_image_dir, f"{id}.jpg"))
                     undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
