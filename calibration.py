@@ -185,7 +185,7 @@ def calibrate_camera_from_primer(frames: Any,
         incremental_options.multiple_models = False # Avoid multiple models
         incremental_options.max_num_models = 1
         incremental_options.ba_global_function_tolerance = 0.000001
-        incremental_options.min_num_matches = 3 # See https://github.com/colmap/colmap/issues/1225
+        incremental_options.min_num_matches = 10 # See https://github.com/colmap/colmap/issues/1225
         incremental_options.min_model_size = 5
         stage1_reconstruction = pycolmap.incremental_mapping(
             database_path=stage1_database_path,
@@ -249,7 +249,6 @@ def calibrate_camera_from_primer(frames: Any,
         #     shutil.rmtree(sh_file, ignore_errors=True)
             
         print(f"Stage 1 ({cam_model}) calibration completed with {len(stage1_reconstruction)} reconstructions and {stage1_reconstruction[0].num_frames()} images for the first model.")
-        exit()
     except Exception as e:
         print(f"Stage 1 (fisheye) calibration failed: {e}. Not proceeding to Stage 2. Exiting.")
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir} 
@@ -271,6 +270,8 @@ def calibrate_camera_from_primer(frames: Any,
         incremental_options.multiple_models = False # Avoid multiple models
         incremental_options.max_num_models = 1
         incremental_options.ba_global_function_tolerance = 0.000001
+        incremental_options.min_num_matches = 10 # See https://github.com/colmap/colmap/issues/1225
+        incremental_options.min_model_size = 5        
         stage2_reconstruction = pycolmap.incremental_mapping(
             database_path=stage2_database_path,
             image_path=stage2_image_dir,
