@@ -191,9 +191,13 @@ def calibrate_camera_from_primer(frames: Any,
             output_path=stage1_dir,
             options=incremental_options
         )
+        if stage1_reconstruction is None or len(stage1_reconstruction) == 0:
+            raise RuntimeError("Stage 1 reconstruction failed or returned no models.")
+        
         stage1_reconstruction[0].write(stage1_dir) # Write explicitly
         print(f'Found multiple ({len(stage1_reconstruction)}) reconstructions:')
-        for recon in stage1_reconstruction:
+        for ctr, _ in enumerate(stage1_reconstruction):
+            recon = stage1_reconstruction[ctr]
             print(f" - {recon.num_frames()} frames")
 
         # Undistort images
@@ -201,7 +205,8 @@ def calibrate_camera_from_primer(frames: Any,
         # Print distortion parameters
         if stage1_reconstruction is not None and len(stage1_reconstruction) > 0:
             best_recon = None # Pick one with the most reconstruction
-            for recon in stage1_reconstruction:
+            for ctr, _ in enumerate(stage1_reconstruction):
+                recon = stage1_reconstruction[ctr]
                 if best_recon is None or recon.num_frames() > best_recon.num_frames():
                     best_recon = recon
                     
