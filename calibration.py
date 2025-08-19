@@ -231,7 +231,7 @@ def calibrate_camera_from_primer(frames: Any,
                 break # Since we are assuming only 1 set of distortion parameters for all cameras
 
         # # COLMAP undistort
-        # stage1_reconstruction[0].write(stage1_dir) # Write explicitly
+        # best_recon.write(stage1_dir) # Write explicitly
         # undistort_options = pycolmap.UndistortCameraOptions()
         # undistort_options.max_image_size = 1920 # PARAM
         # pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir, undistort_options=undistort_options)
@@ -253,7 +253,6 @@ def calibrate_camera_from_primer(frames: Any,
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir} 
         
     try:
-        print(f"Stage 2 (SIMPLE_PINHOLE) calibration started")
         stage2_database_path = os.path.join(stage2_dir, "stage2.db")
 
         sift_options = pycolmap.SiftExtractionOptions()
@@ -265,6 +264,7 @@ def calibrate_camera_from_primer(frames: Any,
         cam_model = 'SIMPLE_PINHOLE'
         # cam_model = 'PINHOLE'
         # cam_model = 'RADIAL_FISHEYE'
+        print(f"Stage 2 ({cam_model}) calibration started")
         pycolmap.extract_features(database_path=stage2_database_path, image_path=stage2_image_dir, camera_mode=camera_mode, camera_model=cam_model, sift_options=sift_options)
 
         pycolmap.match_exhaustive(database_path=stage2_database_path)
@@ -294,8 +294,8 @@ def calibrate_camera_from_primer(frames: Any,
             if best_recon is None or recon.num_frames() > best_recon.num_frames():
                 best_recon = recon
 
-        final_cam_params["model"] = cam_model
-        final_cam_params["camera_mode"] = camera_mode
+        final_cam_params["model"] = str(cam_model)
+        final_cam_params["camera_mode"] = str(camera_mode)
         for cam in best_recon.cameras.values():
             final_cam_params["undist_params"] = cam.params.tolist()
             break
