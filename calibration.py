@@ -242,6 +242,7 @@ def calibrate_camera_from_primer(frames: Any,
         #     shutil.rmtree(sh_file, ignore_errors=True)
             
         print(f"Stage 1 ({cam_model}) calibration completed with {len(stage1_reconstruction)} models and {stage1_reconstruction[0].num_frames()} images for the first model.")
+        exit()
     except Exception as e:
         print(f"Stage 1 (fisheye) calibration failed: {e}. Not proceeding to Stage 2. Exiting.")
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir} 
