@@ -222,31 +222,31 @@ def calibrate_camera_from_primer(frames: Any,
                 with open(os.path.join(output_dir, f"shared_distortion_params.json"), "w") as f:
                     f.write(json.dumps(cam_params, indent=4))
         
-                # OpenCV undistort
-                os.makedirs(stage2_image_dir, exist_ok=True)
-                for id, dist_img_path in frame_path_list:
-                    img = cv2.imread(dist_img_path)
-                    print(f'Undistorting with {cam.params.tolist()}')
-                    undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
-                    cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
+                # # OpenCV undistort
+                # os.makedirs(stage2_image_dir, exist_ok=True)
+                # for id, dist_img_path in frame_path_list:
+                #     img = cv2.imread(dist_img_path)
+                #     print(f'Undistorting with {cam.params.tolist()}')
+                #     undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
+                #     cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
 
                 break # Since we are assuming only 1 set of distortion parameters for all cameras
 
-        # # COLMAP undistort
-        # undistort_options = pycolmap.UndistortCameraOptions()
-        # undistort_options.max_image_size = 1920 # PARAM
-        # pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir, undistort_options=undistort_options)
-        # # Re-structure undistorted_image_dir
-        # file_names = os.listdir(os.path.join(stage2_image_dir, "images"))
-        # for file_name in file_names:
-        #     # print(f"Moving {file_name} to {stage2_image_dir}/")
-        #     shutil.move(os.path.join(stage2_image_dir, "images", file_name), os.path.join(stage2_image_dir, file_name))
-        # shutil.rmtree(os.path.join(stage2_image_dir, "images"), ignore_errors=True)
-        # shutil.rmtree(os.path.join(stage2_image_dir, "sparse"), ignore_errors=True)
-        # shutil.rmtree(os.path.join(stage2_image_dir, "stereo"), ignore_errors=True)
-        # sh_files = glob.glob(os.path.join(stage2_image_dir, "run-*.sh"))
-        # for sh_file in sh_files:
-        #     shutil.rmtree(sh_file, ignore_errors=True)
+        # COLMAP undistort
+        undistort_options = pycolmap.UndistortCameraOptions()
+        undistort_options.max_image_size = 1920 # PARAM
+        pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir, undistort_options=undistort_options)
+        # Re-structure undistorted_image_dir
+        file_names = os.listdir(os.path.join(stage2_image_dir, "images"))
+        for file_name in file_names:
+            # print(f"Moving {file_name} to {stage2_image_dir}/")
+            shutil.move(os.path.join(stage2_image_dir, "images", file_name), os.path.join(stage2_image_dir, file_name))
+        shutil.rmtree(os.path.join(stage2_image_dir, "images"), ignore_errors=True)
+        shutil.rmtree(os.path.join(stage2_image_dir, "sparse"), ignore_errors=True)
+        shutil.rmtree(os.path.join(stage2_image_dir, "stereo"), ignore_errors=True)
+        sh_files = glob.glob(os.path.join(stage2_image_dir, "run-*.sh"))
+        for sh_file in sh_files:
+            shutil.rmtree(sh_file, ignore_errors=True)
             
         print(f"Stage 1 ({cam_model}) calibration completed with {len(stage1_reconstruction)} reconstructions and {stage1_reconstruction[0].num_frames()} images for the first model.")
     except Exception as e:
@@ -263,7 +263,10 @@ def calibrate_camera_from_primer(frames: Any,
         # OPENCV, FULL_OPENCV: Use these camera models, if you know the calibration parameters a priori. You can also try to let COLMAP estimate the parameters, if you share the intrinsics for multiple images. Note that the automatic estimation of parameters will most likely fail, if every image has a separate set of intrinsic parameters.        
         camera_mode = pycolmap.CameraMode.SINGLE
         # camera_mode = pycolmap.CameraMode.PER_IMAGE
-        pycolmap.extract_features(database_path=stage2_database_path, image_path=stage2_image_dir, camera_mode=camera_mode, camera_model='SIMPLE_PINHOLE', sift_options=sift_options)
+        cam_model = 'SIMPLE_PINHOLE'
+        # cam_model = 'PINHOLE'
+        # cam_model = 'RADIAL_FISHEYE'
+        pycolmap.extract_features(database_path=stage2_database_path, image_path=stage2_image_dir, camera_mode=camera_mode, camera_model=cam_model, sift_options=sift_options)
 
         pycolmap.match_exhaustive(database_path=stage2_database_path)
 
