@@ -164,11 +164,16 @@ def calibrate_camera_from_primer(frames: Any,
     if len(frame_path_list) < min_images:
         return {"success": False, "message": f"Only {len(frame_path_list)} valid images", "output_dir": output_dir}
 
+    final_cam_params = {
+                    "model": "UNKNOWN",
+                    "camera_mode": "UNKNOWN",
+                    "dist_params": None,
+                    "undist_params": None
+                }
     # We will follow a 2-stage strategy
     # Stage 1 assumes a single camera model for all cameras, extracts distortion parameters and undistorts the images
     # Stage 2 takes the undistorted images and refines the camera parameters using a PINHOLE model
     try:
-        print(f"Stage 1 (RADIAL_FISHEYE) calibration started")
         stage1_database_path = os.path.join(stage1_dir, "stage1.db")
         stage1_image_dir = os.path.join(stage1_dir, "images")
 
@@ -176,6 +181,7 @@ def calibrate_camera_from_primer(frames: Any,
         sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
         # SIMPLE_RADIAL_FISHEYE, RADIAL_FISHEYE, OPENCV_FISHEYE, FOV, THIN_PRISM_FISHEYE, RAD_TAN_THIN_PRISM_FISHEYE: Use these camera models for fisheye lenses and note that all other models are not really capable of modeling the distortion effects of fisheye lenses. The FOV model is used by Google Project Tango (make sure to not initialize omega to zero).
         cam_model = 'RADIAL_FISHEYE'
+        print(f"Stage 1 ({cam_model}) calibration started")
         pycolmap.extract_features(database_path=stage1_database_path, image_path=stage1_image_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model=cam_model, sift_options=sift_options)
 
         pycolmap.match_exhaustive(database_path=stage1_database_path)
@@ -196,7 +202,6 @@ def calibrate_camera_from_primer(frames: Any,
         if stage1_reconstruction is None or len(stage1_reconstruction) == 0:
             raise RuntimeError("Stage 1 reconstruction failed or returned no models.")
         
-        stage1_reconstruction[0].write(stage1_dir) # Write explicitly
         print(f'Found multiple ({len(stage1_reconstruction)}) reconstructions:')
         for ctr, _ in enumerate(stage1_reconstruction):
             recon = stage1_reconstruction[ctr]
@@ -213,15 +218,8 @@ def calibrate_camera_from_primer(frames: Any,
                     best_recon = recon
                     
             for cam in best_recon.cameras.values():
-                cam_params = {
-                    "name": cam.camera_id,
-                    "model": cam_model,
-                    "params": cam.params.tolist()
-                }
-                print(json.dumps(cam_params, indent=4))
-                with open(os.path.join(output_dir, f"shared_distortion_params.json"), "w") as f:
-                    f.write(json.dumps(cam_params, indent=4))
-        
+                final_cam_params["dist_params"] = cam.params.tolist()
+
                 # OpenCV undistort
                 os.makedirs(stage2_image_dir, exist_ok=True)
                 for id, dist_img_path in frame_path_list:
@@ -233,6 +231,7 @@ def calibrate_camera_from_primer(frames: Any,
                 break # Since we are assuming only 1 set of distortion parameters for all cameras
 
         # # COLMAP undistort
+        # stage1_reconstruction[0].write(stage1_dir) # Write explicitly
         # undistort_options = pycolmap.UndistortCameraOptions()
         # undistort_options.max_image_size = 1920 # PARAM
         # pycolmap.undistort_images(output_path=stage2_image_dir, input_path=stage1_dir, image_path=stage1_image_dir, undistort_options=undistort_options)
@@ -285,21 +284,32 @@ def calibrate_camera_from_primer(frames: Any,
         )
         if stage2_reconstruction is None or len(stage2_reconstruction) == 0:
             raise RuntimeError("Stage 2 reconstruction failed or returned no models.")
-
         stage2_reconstruction[0].write(output_dir) # Write the first reconstruction to the top level directory
-        print(f"Stage 2 ({cam_model}) calibration completed")
-        print(f'Found multiple ({len(stage1_reconstruction)}) reconstructions:')
-        for ctr, _ in enumerate(stage1_reconstruction):
-            recon = stage1_reconstruction[ctr]
+        
+        print(f'Found multiple ({len(stage2_reconstruction)}) reconstructions:')
+        best_recon = None # Pick one with the most reconstruction
+        for ctr, _ in enumerate(stage2_reconstruction):
+            recon = stage2_reconstruction[ctr]
             print(f" - {recon.num_frames()} frames")
+            if best_recon is None or recon.num_frames() > best_recon.num_frames():
+                best_recon = recon
 
-        num_poses_success = stage2_reconstruction[0].num_frames()
+        final_cam_params["model"] = cam_model
+        final_cam_params["camera_mode"] = camera_mode
+        for cam in best_recon.cameras.values():
+            final_cam_params["undist_params"] = cam.params.tolist()
+            break
+
+        with open(os.path.join(output_dir, f"final_cam_params.json"), "w") as f:
+            f.write(json.dumps(final_cam_params, indent=4))
+
+        print(f"Stage 2 ({cam_model}) calibration completed")
 
         return {"success": True,
-                "message": f"Calibration succeeded with {num_poses_success} images",
+                "message": f"Calibration succeeded with {best_recon.num_frames()} images",
                 "output_dir": output_dir,
                 # "camera_params": camera_params_out,
                 # "image_poses": image_poses,
-                "num_registered_images": num_poses_success}
+                "num_registered_images": best_recon.num_frames()}
     except Exception as e:
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
