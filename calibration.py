@@ -192,12 +192,20 @@ def calibrate_camera_from_primer(frames: Any,
             options=incremental_options
         )
         stage1_reconstruction[0].write(stage1_dir) # Write explicitly
-        
+        print(f'Found multiple ({len(stage1_reconstruction)}) reconstructions:')
+        for recon in stage1_reconstruction:
+            print(f" - {recon.num_frames()} frames")
+
         # Undistort images
         stage2_image_dir = os.path.join(stage2_dir, "images")
         # Print distortion parameters
         if stage1_reconstruction is not None and len(stage1_reconstruction) > 0:
-            for cam in stage1_reconstruction[0].cameras.values():
+            best_recon = None # Pick one with the most reconstruction
+            for recon in stage1_reconstruction:
+                if best_recon is None or recon.num_frames() > best_recon.num_frames():
+                    best_recon = recon
+                    
+            for cam in best_recon.cameras.values():
                 cam_params = {
                     "name": cam.camera_id,
                     "model": cam_model,
