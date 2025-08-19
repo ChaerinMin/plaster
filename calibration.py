@@ -165,10 +165,12 @@ def calibrate_camera_from_primer(frames: Any,
         return {"success": False, "message": f"Only {len(frame_path_list)} valid images", "output_dir": output_dir}
 
     final_cam_params = {
-                    "model": "UNKNOWN",
-                    "camera_mode": "UNKNOWN",
-                    "dist_params": None,
-                    "undist_params": None
+                    "stage1_model": "UNKNOWN",
+                    "stage1_camera_mode": "UNKNOWN",
+                    "stage1_params": None,
+                    "stage2_model": "UNKNOWN",
+                    "stage2_camera_mode": "UNKNOWN",
+                    "stage2_params": None,
                 }
     # We will follow a 2-stage strategy
     # Stage 1 assumes a single camera model for all cameras, extracts distortion parameters and undistorts the images
@@ -206,6 +208,9 @@ def calibrate_camera_from_primer(frames: Any,
         for ctr, _ in enumerate(stage1_reconstruction):
             recon = stage1_reconstruction[ctr]
             print(f" - {recon.num_frames()} frames")
+            
+        final_cam_params["stage1_model"] = str(cam_model)
+        final_cam_params["stage1_camera_mode"] = str(camera_mode)
 
         # Undistort images
         stage2_image_dir = os.path.join(stage2_dir, "images")
@@ -218,7 +223,7 @@ def calibrate_camera_from_primer(frames: Any,
                     best_recon = recon
                     
             for cam in best_recon.cameras.values():
-                final_cam_params["dist_params"] = cam.params.tolist()
+                final_cam_params["stage1_params"] = cam.params.tolist()
 
                 # OpenCV undistort
                 os.makedirs(stage2_image_dir, exist_ok=True)
@@ -294,10 +299,10 @@ def calibrate_camera_from_primer(frames: Any,
             if best_recon is None or recon.num_frames() > best_recon.num_frames():
                 best_recon = recon
 
-        final_cam_params["model"] = str(cam_model)
-        final_cam_params["camera_mode"] = str(camera_mode)
+        final_cam_params["stage2_model"] = str(cam_model)
+        final_cam_params["stage2_camera_mode"] = str(camera_mode)
         for cam in best_recon.cameras.values():
-            final_cam_params["undist_params"] = cam.params.tolist()
+            final_cam_params["stage2_params"] = cam.params.tolist()
             break
 
         with open(os.path.join(output_dir, f"final_cam_params.json"), "w") as f:
