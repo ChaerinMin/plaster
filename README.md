@@ -20,8 +20,8 @@ The typical workflow is to have a standalone machine (e.g., on AWS or GCP) run `
 - Download the Anaconda installer script, or any other python environment you want:
 
 ```bash
-wget https://repo.anaconda.com/archive/Anaconda3-latest-Linux-x86_64.sh
-bash Anaconda3-latest-Linux-x86_64.sh
+curl -O https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Linux-x86_64.sh
+bash Anaconda3-2025.06-0-Linux-x86_64.sh
 source ~/anaconda3/bin/activate
 ```
 
