@@ -183,8 +183,9 @@ def calibrate_camera_from_primer(frames: Any,
         sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
         # SIMPLE_RADIAL_FISHEYE, RADIAL_FISHEYE, OPENCV_FISHEYE, FOV, THIN_PRISM_FISHEYE, RAD_TAN_THIN_PRISM_FISHEYE: Use these camera models for fisheye lenses and note that all other models are not really capable of modeling the distortion effects of fisheye lenses. The FOV model is used by Google Project Tango (make sure to not initialize omega to zero).
         cam_model = 'RADIAL_FISHEYE'
+        camera_mode = pycolmap.CameraMode.SINGLE
         print(f"Stage 1 ({cam_model}) calibration started")
-        pycolmap.extract_features(database_path=stage1_database_path, image_path=stage1_image_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model=cam_model, sift_options=sift_options)
+        pycolmap.extract_features(database_path=stage1_database_path, image_path=stage1_image_dir, camera_mode=camera_mode, camera_model=cam_model, sift_options=sift_options)
 
         pycolmap.match_exhaustive(database_path=stage1_database_path)
         
