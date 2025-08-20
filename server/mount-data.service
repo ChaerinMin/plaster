@@ -1,0 +1,17 @@
+[Unit]
+Description=Mount Brown CCV data with SSHFS
+After=sys-subsystem-net-devices-eth0.device
+After=sys-subsystem-net-devices-wlan0.device
+Wants=network-online.target
+After=network.target network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/mount-data.sh
+RemainAfterExit=true
+ExecStop=/bin/fusermount -u /mnt/brics-universe /mnt/brics-studio /mnt/project-bolt
+TimeoutSec=120
+User=srinath
+
+[Install]
+WantedBy=multi-user.target

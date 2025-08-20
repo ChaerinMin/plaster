@@ -266,7 +266,6 @@ def calibrate_camera_from_primer(frames: Any,
         # camera_mode = pycolmap.CameraMode.PER_IMAGE
         cam_model = 'SIMPLE_PINHOLE'
         # cam_model = 'PINHOLE'
-        # cam_model = 'RADIAL_FISHEYE'
         print(f"Stage 2 ({cam_model}) calibration started")
         pycolmap.extract_features(database_path=stage2_database_path, image_path=stage2_image_dir, camera_mode=camera_mode, camera_model=cam_model, sift_options=sift_options)
 
