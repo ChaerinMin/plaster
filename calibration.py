@@ -184,9 +184,10 @@ def calibrate_camera_from_primer(frames: Any,
         sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
         # SIMPLE_RADIAL, RADIAL: This should be the camera model of choice, if the intrinsics are unknown and every image has a different camera calibration, e.g., in the case of Internet photos. Both models are simplified versions of the OPENCV model only modeling radial distortion effects with one and two parameters, respectively.
         # cam_model = 'RADIAL_FISHEYE'
-        # cam_model = 'RADIAL'
-        cam_model = 'OPENCV'
-        camera_mode = pycolmap.CameraMode.SINGLE
+        cam_model = 'RADIAL'
+        # cam_model = 'OPENCV'
+        # camera_mode = pycolmap.CameraMode.SINGLE
+        camera_mode = pycolmap.CameraMode.PER_IMAGE
         print(f"Stage 1 ({cam_model}) calibration started")
         pycolmap.extract_features(database_path=stage1_database_path, image_path=stage1_image_dir, camera_mode=camera_mode, camera_model=cam_model, sift_options=sift_options)
 
