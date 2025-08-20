@@ -178,6 +178,7 @@ def calibrate_camera_from_primer(frames: Any,
     try:
         stage1_database_path = os.path.join(stage1_dir, "stage1.db")
         stage1_image_dir = os.path.join(stage1_dir, "images")
+        stage1_recon_output_path = os.path.join(stage1_dir, "sparse")
 
         sift_options = pycolmap.SiftExtractionOptions()
         sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
@@ -200,7 +201,7 @@ def calibrate_camera_from_primer(frames: Any,
         stage1_reconstruction = pycolmap.incremental_mapping(
             database_path=stage1_database_path,
             image_path=stage1_image_dir,
-            output_path=stage1_dir,
+            output_path=stage1_recon_output_path,
             options=incremental_options
         )
         if stage1_reconstruction is None or len(stage1_reconstruction) == 0:
@@ -255,6 +256,7 @@ def calibrate_camera_from_primer(frames: Any,
         
     try:
         stage2_database_path = os.path.join(stage2_dir, "stage2.db")
+        stage2_recon_output_path = os.path.join(stage2_dir, "sparse")
 
         sift_options = pycolmap.SiftExtractionOptions()
         sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
@@ -280,7 +282,7 @@ def calibrate_camera_from_primer(frames: Any,
         stage2_reconstruction = pycolmap.incremental_mapping(
             database_path=stage2_database_path,
             image_path=stage2_image_dir,
-            output_path=stage2_dir,
+            output_path=stage2_recon_output_path,
             options=incremental_options
         )
         if stage2_reconstruction is None or len(stage2_reconstruction) == 0:
