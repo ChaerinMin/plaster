@@ -206,35 +206,29 @@ def calibrate_camera_from_primer(frames: Any,
             raise RuntimeError("Stage 1 reconstruction failed or returned no models.")
         
         print(f'Found multiple ({len(stage1_reconstruction)}) reconstructions:')
+        best_recon = None # Pick one with the most reconstruction
         for ctr, _ in enumerate(stage1_reconstruction):
             recon = stage1_reconstruction[ctr]
             print(f" - {recon.num_frames()} frames")
+            if best_recon is None or recon.num_frames() > best_recon.num_frames():
+                best_recon = recon
+
+        stage2_image_dir = os.path.join(stage2_dir, "images")
             
         final_cam_params["stage1_model"] = str(cam_model)
         final_cam_params["stage1_camera_mode"] = str(camera_mode)
+        for cam in best_recon.cameras.values():
+            final_cam_params["stage1_params"] = cam.params.tolist()
 
-        # Undistort images
-        stage2_image_dir = os.path.join(stage2_dir, "images")
-        # Print distortion parameters
-        if stage1_reconstruction is not None and len(stage1_reconstruction) > 0:
-            best_recon = None # Pick one with the most reconstruction
-            for ctr, _ in enumerate(stage1_reconstruction):
-                recon = stage1_reconstruction[ctr]
-                if best_recon is None or recon.num_frames() > best_recon.num_frames():
-                    best_recon = recon
-                    
-            for cam in best_recon.cameras.values():
-                final_cam_params["stage1_params"] = cam.params.tolist()
+            # OpenCV undistort
+            os.makedirs(stage2_image_dir, exist_ok=True)
+            for id, dist_img_path in frame_path_list:
+                img = cv2.imread(dist_img_path)
+                print(f'Undistorting with {cam.params.tolist()}')
+                undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
+                cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
 
-                # OpenCV undistort
-                os.makedirs(stage2_image_dir, exist_ok=True)
-                for id, dist_img_path in frame_path_list:
-                    img = cv2.imread(dist_img_path)
-                    print(f'Undistorting with {cam.params.tolist()}')
-                    undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
-                    cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
-
-                break # Since we are assuming only 1 set of distortion parameters for all cameras
+            break # Since we are assuming only 1 set of distortion parameters for all cameras
 
         # # COLMAP undistort
         # best_recon.write(stage1_dir) # Write explicitly
