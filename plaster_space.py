@@ -4,6 +4,7 @@ from time_cache import TimeCache
 import os
 import json
 import primer
+import shutil
 from calibration import calibrate_camera_from_primer
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
@@ -45,6 +46,11 @@ if __name__ == "__main__":
             # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
             # day = "2025-05-11" # brics-universe, multisequence000003
             # ms["name"] = "multisequence000001"
+            
+            calib_dir = os.path.join(args.source, day, ms["name"], "calib")
+            if os.path.exists(calib_dir) and args.force_reserialize:
+                print(f"Removing existing calibration directory: {calib_dir}")
+                shutil.rmtree(calib_dir)
 
             print(f"Processing multisequence: {ms['name']}")
             dataloader = primer.Primer(args.source, day, ms["name"])
@@ -54,8 +60,7 @@ if __name__ == "__main__":
 
             # frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"][:10]]
             # print(f'DEBUG with {frame_data.__len__()} images.')
-
-            calib_dir = os.path.join(args.source, day, ms["name"], "calib")
+            
             calib_res = calibrate_camera_from_primer(
                 frames=frame_data,
                 output_dir=calib_dir,
