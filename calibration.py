@@ -184,7 +184,8 @@ def calibrate_camera_from_primer(frames: Any,
         sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
         # SIMPLE_RADIAL, RADIAL: This should be the camera model of choice, if the intrinsics are unknown and every image has a different camera calibration, e.g., in the case of Internet photos. Both models are simplified versions of the OPENCV model only modeling radial distortion effects with one and two parameters, respectively.
         # cam_model = 'RADIAL_FISHEYE'
-        cam_model = 'RADIAL'
+        # cam_model = 'RADIAL'
+        cam_model = 'OPENCV'
         camera_mode = pycolmap.CameraMode.SINGLE
         print(f"Stage 1 ({cam_model}) calibration started")
         pycolmap.extract_features(database_path=stage1_database_path, image_path=stage1_image_dir, camera_mode=camera_mode, camera_model=cam_model, sift_options=sift_options)
@@ -251,7 +252,7 @@ def calibrate_camera_from_primer(frames: Any,
             
         print(f"Stage 1 ({cam_model}) calibration completed with {len(stage1_reconstruction)} reconstructions and {stage1_reconstruction[0].num_frames()} images for the first model.")
     except Exception as e:
-        print(f"Stage 1 (fisheye) calibration failed: {e}. Not proceeding to Stage 2. Exiting.")
+        print(f"Stage 1 ({cam_model}) calibration failed: {e}. Not proceeding to Stage 2. Exiting.")
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir} 
         
     try:

@@ -34,15 +34,16 @@ if __name__ == "__main__":
     if True:
         if True:
             ms = dict()
-            # # Baby dancing multisequence
+            # Baby dancing multisequence
             # args.source = "/oscar/data/ssrinath//brics/non-pii/brics-studio"
-            # day = "2025-03-28" # brics-studio, multisequence000001
-            # ms["name"] = "multisequence000001"
-            # CS Lawn multisequence
-            # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
-            args.source = "/mnt/brics-universe"
-            day = "2025-05-14" # brics-universe, multisequence000003
-            ms["name"] = "multisequence000003"
+            args.source = "/mnt/brics-studio"
+            day = "2025-03-28" # brics-studio, multisequence000001
+            ms["name"] = "multisequence000001"
+            # # CS Lawn multisequence
+            # # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
+            # args.source = "/mnt/brics-universe"
+            # day = "2025-05-14" # brics-universe, multisequence000003
+            # ms["name"] = "multisequence000003"
             # # 191 Medway
             # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
             # day = "2025-05-11" # brics-universe, multisequence000003
