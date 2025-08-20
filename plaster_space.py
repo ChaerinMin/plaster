@@ -39,7 +39,8 @@ if __name__ == "__main__":
             # day = "2025-03-28" # brics-studio, multisequence000001
             # ms["name"] = "multisequence000001"
             # CS Lawn multisequence
-            args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
+            # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
+            args.source = "/mnt/brics-universe"
             day = "2025-05-14" # brics-universe, multisequence000003
             ms["name"] = "multisequence000003"
             # # 191 Medway

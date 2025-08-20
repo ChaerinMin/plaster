@@ -6,7 +6,7 @@ We will setup a server that will "plaster" data captured using BRICS.
 - Install relevant packages
 ```
 sudo apt update
-sudo apt install -y build-essential cmake libboost-all-dev gdb iperf sshfs chrony iputils-ping git
+sudo apt install -y build-essential cmake libboost-all-dev gdb iperf sshfs chrony iputils-ping git libgl1
 ```
 
 - Setup key-pair authentication for Github
