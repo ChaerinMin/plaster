@@ -264,8 +264,8 @@ def calibrate_camera_from_primer(frames: Any,
         # OPENCV, FULL_OPENCV: Use these camera models, if you know the calibration parameters a priori. You can also try to let COLMAP estimate the parameters, if you share the intrinsics for multiple images. Note that the automatic estimation of parameters will most likely fail, if every image has a separate set of intrinsic parameters.        
         camera_mode = pycolmap.CameraMode.SINGLE
         # camera_mode = pycolmap.CameraMode.PER_IMAGE
-        cam_model = 'SIMPLE_PINHOLE'
-        # cam_model = 'PINHOLE'
+        # cam_model = 'SIMPLE_PINHOLE'
+        cam_model = 'PINHOLE'
         print(f"Stage 2 ({cam_model}) calibration started")
         pycolmap.extract_features(database_path=stage2_database_path, image_path=stage2_image_dir, camera_mode=camera_mode, camera_model=cam_model, sift_options=sift_options)
 
