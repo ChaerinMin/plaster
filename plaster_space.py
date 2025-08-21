@@ -5,7 +5,7 @@ import os
 import json
 import primer
 import shutil
-import datetime
+from datetime import datetime
 from calibration import calibrate_camera_from_primer
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
