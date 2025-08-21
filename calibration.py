@@ -249,8 +249,8 @@ def calibrate_camera_from_primer(frames: Any,
         # sh_files = glob.glob(os.path.join(stage2_image_dir, "run-*.sh"))
         # for sh_file in sh_files:
         #     shutil.rmtree(sh_file, ignore_errors=True)
-            
-        print(f"Stage 1 ({stage1_camera_model} and {str(stage1_camera_mode)}) calibration completed with {len(stage1_reconstruction)} reconstructions and {stage1_reconstruction[0].num_frames()} images for the first model.")
+
+        print(f"Stage 1 ({stage1_camera_model} and {str(stage1_camera_mode)}) calibration completed with {len(stage1_reconstruction)} reconstructions and {best_recon.num_frames()} images for the best reconstruction.")
     except Exception as e:
         print(f"Stage 1 ({stage1_camera_model} and {str(stage1_camera_mode)}) calibration failed: {e}. Not proceeding to Stage 2. Exiting.")
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
@@ -283,7 +283,6 @@ def calibrate_camera_from_primer(frames: Any,
         )
         if stage2_reconstruction is None or len(stage2_reconstruction) == 0:
             raise RuntimeError("Stage 2 reconstruction failed or returned no models.")
-        stage2_reconstruction[0].write(output_dir) # Write the first reconstruction to the top level directory
         
         print(f'Found multiple ({len(stage2_reconstruction)}) reconstructions:')
         best_recon = None # Pick one with the most reconstruction
@@ -292,6 +291,8 @@ def calibrate_camera_from_primer(frames: Any,
             print(f" - {recon.num_frames()} frames")
             if best_recon is None or recon.num_frames() > best_recon.num_frames():
                 best_recon = recon
+
+        best_recon.write(output_dir) # Write the best reconstruction to the top level directory
 
         final_cam_params["stage2_model"] = str(stage2_camera_model)
         final_cam_params["stage2_camera_mode"] = str(stage2_camera_mode)
@@ -302,7 +303,7 @@ def calibrate_camera_from_primer(frames: Any,
         with open(os.path.join(output_dir, f"final_cam_params.json"), "w") as f:
             f.write(json.dumps(final_cam_params, indent=4))
 
-        print(f"Stage 2 ({stage2_camera_model} and {str(stage2_camera_mode)}) calibration completed")
+        print(f"Stage 2 ({stage2_camera_model} and {str(stage2_camera_mode)}) calibration completed with {best_recon.num_frames()} images for the best reconstruction.")
 
         return {"success": True,
                 "message": f"Calibration succeeded with {best_recon.num_frames()} images",
