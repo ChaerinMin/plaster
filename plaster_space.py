@@ -46,7 +46,7 @@ if __name__ == "__main__":
             # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
             # day = "2025-05-11" # brics-universe, multisequence000003
             # ms["name"] = "multisequence000001"
-            # Baby dancing multisequence
+            # Basketball pass multisequence
             # args.source = "/oscar/data/ssrinath//brics/non-pii/brics-studio"
             args.source = "/mnt/brics-studio"
             day = "2025-04-23" # brics-studio, multisequence000001

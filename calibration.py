@@ -218,8 +218,8 @@ def calibrate_camera_from_primer(frames: Any,
 
         stage2_image_dir = os.path.join(stage2_dir, "images")
             
-        final_cam_params["stage1_model"] = str(cam_model)
-        final_cam_params["stage1_camera_mode"] = str(camera_mode)
+        final_cam_params["stage1_model"] = str(stage1_camera_model)
+        final_cam_params["stage1_camera_mode"] = str(stage1_camera_mode)
         for cam in best_recon.cameras.values():
             final_cam_params["stage1_params"] = cam.params.tolist()
 
@@ -228,7 +228,7 @@ def calibrate_camera_from_primer(frames: Any,
             for id, dist_img_path in frame_path_list:
                 img = cv2.imread(dist_img_path)
                 print(f'Undistorting with {cam.params.tolist()}')
-                undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=cam_model)
+                undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=stage1_camera_model)
                 cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
 
             break # Since we are assuming only 1 set of distortion parameters for all cameras
