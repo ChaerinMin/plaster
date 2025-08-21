@@ -7,7 +7,7 @@ After=network.target network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/opt/mount-data.sh
+ExecStart=/opt/plaster-mount-data.sh
 RemainAfterExit=true
 ExecStop=/bin/fusermount -u /mnt/brics-universe /mnt/brics-studio /mnt/project-bolt
 TimeoutSec=120
