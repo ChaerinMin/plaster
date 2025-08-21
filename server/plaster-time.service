@@ -1,0 +1,17 @@
+[Unit]
+Description = Plaster time for all Project Bolt captures
+After=sys-subsystem-net-devices-eth0.device
+After=sys-subsystem-net-devices-wlan0.device
+Wants=network-online.target
+After=network.target network-online.target
+ 
+[Service]
+Type = oneshot
+ExecStart = /bin/bash -lc 'source /home/%u/opt/anaconda3/bin/activate plaster && python -u /home/%u/code/plaster/plaster_time.py -s /mnt/project-bolt'
+Restart = on-failure
+RestartSec = 5
+TimeoutStartSec = infinity
+User = srinath
+ 
+[Install]
+WantedBy = multi-user.target
