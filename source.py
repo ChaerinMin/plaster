@@ -270,6 +270,7 @@ class Day:
 
         if os.path.exists(self.plaster_path) and not self.force_reserialize:
             # Only update duration and return
+            print(f"Found cached plaster for {self.date}. Not re-plastering.")
             with open(self.plaster_path, 'r') as json_file:
                 try:
                     data = json.load(json_file)
