@@ -47,9 +47,9 @@ def main():
     p.add_argument("output_video_dir", help="Directory to write H.264 videos")
     p.add_argument("recon_npy_dir", nargs="?", help="Optional directory to write reconstructed .npy frames")
     p.add_argument("--fps", type=int, default=30)
-    p.add_argument("--crf", type=int, default=0, help="H.264 constant rate factor (0=lossless with libx264)")
+    p.add_argument("--crf", type=int, default=18, help="H.264 constant rate factor (0 triggers libx264rgb lossless)")
     p.add_argument("--codec", default="libx264")
-    p.add_argument("--pix_fmt", default="yuv444p")
+    p.add_argument("--pix_fmt", default="yuv420p")
     args = p.parse_args()
 
     os.makedirs(args.output_video_dir, exist_ok=True)

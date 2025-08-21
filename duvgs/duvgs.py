@@ -3,7 +3,7 @@ import math
 import os
 import sys
 from dataclasses import dataclass, asdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 import numpy as np
 
@@ -43,9 +43,12 @@ def _sorted_npy_files(input_dir: str) -> List[str]:
     return [os.path.join(input_dir, f) for f in files]
 
 
-def _open_writer(path: str, fps: int, codec: str, crf: int, pix_fmt: str):
+def _open_writer(path: str, fps: int, codec: str, crf: int, pix_fmt: str, extra_params: Optional[List[str]] = None):
     # Prefer explicit ffmpeg backend
-    params = dict(fps=fps, codec=codec, format="ffmpeg", ffmpeg_params=["-crf", str(crf), "-pix_fmt", pix_fmt])
+    ffparams = ["-crf", str(crf), "-pix_fmt", pix_fmt]
+    if extra_params:
+        ffparams.extend(extra_params)
+    params = dict(fps=fps, codec=codec, format="ffmpeg", ffmpeg_params=ffparams)
     try:
         return imageio.get_writer(path, **params)
     except TypeError:
@@ -89,9 +92,9 @@ def encode_npy_dir_to_videos(
     input_dir: str,
     output_dir: str,
     fps: int = 30,
-    crf: int = 0,
+    crf: int = 18,
     codec: str = "libx264",
-    pix_fmt: str = "yuv444p",
+    pix_fmt: str = "yuv420p",
 ) -> str:
     """
     Encode a directory of .npy frames (shape: H x W x C x F, dtype float32/float64)
@@ -112,9 +115,25 @@ def encode_npy_dir_to_videos(
     mapping = _build_group_mapping(planes_per_layer)
     groups_per_layer = len(mapping)
 
-    # H.264 often needs even dimensions; pad as needed and record
-    pad_h = h % 2
-    pad_w = w % 2
+    # Choose codec/pix_fmt combinations and padding rules
+    used_codec = codec
+    used_pix_fmt = pix_fmt
+    extra_params: List[str] = []
+    # Use libx264rgb for lossless (crf=0) to avoid subsampling and ensure compatibility
+    if crf == 0 and codec == "libx264":
+        used_codec = "libx264rgb"
+        used_pix_fmt = "rgb24"
+        extra_params.extend(["-preset", "medium"])  # sensible default
+
+    def _needs_even_dims(fmt: str) -> bool:
+        return fmt.startswith("yuv420") or fmt.startswith("yuv422")
+
+    if _needs_even_dims(used_pix_fmt):
+        pad_h = h % 2
+        pad_w = w % 2
+    else:
+        pad_h = 0
+        pad_w = 0
     out_h = h + pad_h
     out_w = w + pad_w
 
@@ -123,7 +142,9 @@ def encode_npy_dir_to_videos(
     for layer in range(f):
         for g in range(groups_per_layer):
             out_path = os.path.join(output_dir, f"layer{layer:02d}_group{g:02d}.mp4")
-            writers[(layer, g)] = _open_writer(out_path, fps=fps, codec=codec, crf=crf, pix_fmt=pix_fmt)
+            writers[(layer, g)] = _open_writer(
+                out_path, fps=fps, codec=used_codec, crf=crf, pix_fmt=used_pix_fmt, extra_params=extra_params
+            )
 
     # Stream frames
     try:
@@ -189,9 +210,9 @@ def encode_npy_dir_to_videos(
         layers=f,
         num_frames=len(npy_paths),
         fps=fps,
-        codec=codec,
+    codec=used_codec,
         crf=crf,
-        pix_fmt=pix_fmt,
+    pix_fmt=used_pix_fmt,
         pad_h=pad_h,
         pad_w=pad_w,
         groups_per_layer=groups_per_layer,
