@@ -50,6 +50,17 @@ sudo reboot
 - Enable plaster time periodic syncing (every 10 minutes)
 
 ```
+# Optionally, stop previous versions
+sudo systemctl stop plaster-time.timer
+sudo systemctl disable plaster-time.timer
+sudo systemctl stop plaster-time.service
+sudo systemctl disable plaster-time.service
+
+sudo systemctl stop plaster-space.timer
+sudo systemctl disable plaster-space.timer
+sudo systemctl stop plaster-space.service
+sudo systemctl disable plaster-space.service
+
 # Install the systemd units
 sudo cp ~/code/plaster/server/plaster-time.service /etc/systemd/system/
 sudo cp ~/code/plaster/server/plaster-time.timer /etc/systemd/system/
