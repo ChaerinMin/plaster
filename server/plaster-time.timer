@@ -3,9 +3,9 @@ Description=Run plaster-time.service every 10 minutes
 
 [Timer]
 # First run 5 minutes after boot, then every 10 minutes thereafter
-OnBootSec=5m
-OnUnitActiveSec=10m
-AccuracySec=1m
+OnBootSec=10s
+OnUnitActiveSec=30s
+AccuracySec=1s
 Unit=plaster-time.service
 Persistent=true
 
