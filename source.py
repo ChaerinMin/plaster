@@ -254,28 +254,29 @@ class Day:
         """
         Initializes the day by listing all the sensors that were capturing data on that day.
         """
-        sensor_pattern = re.compile(r'^[A-Za-z0-9_\-]+$')
         if not os.path.exists(self.path):
             self.sensors = []
             print(f"Day directory {self.path} does not exist.")
             return
         
-        sensor_names = [entry for entry in os.listdir(self.path)
-                        if os.path.isdir(os.path.join(self.path, entry)) and sensor_pattern.match(entry)]
+        # If the date is today, more data could have been added, so by default, we will force reserialize. If not, we check for day plaster, and just use that
+        today = datetime.now().strftime('%Y-%m-%d')
+        if self.date == today:
+            print(f"Today is same as {today}, forcing reserialization for today.")
+            self.force_reserialize = True
+
+        sensor_pattern = re.compile(r'^[A-Za-z0-9_\-]+$')
+        sensor_names = [entry for entry in os.listdir(self.path) if sensor_pattern.match(entry)]
 
         if os.path.exists(self.plaster_path) and not self.force_reserialize:
+            # Only update duration and return
             with open(self.plaster_path, 'r') as json_file:
                 try:
                     data = json.load(json_file)
-                    json_sensors = data.get('sensors', [])
-                except Exception:
-                    json_sensors = []
-
-            if set(json_sensors) == set(sensor_names):
-                print(f"Using cached sensor data for {self.date}.")
-                self.sensors = [Sensor(self.source_path, self.date, sensor, force_reserialize=self.force_reserialize) for sensor in json_sensors]
+                    self.duration = float(data.get("duration", 0.0) or 0.0)
+                except Exception as e:
+                    print(f"Failed to read plaster data for {self.date}: {e}")
                 return
-            # else, update JSON below
 
         self.sensors = [Sensor(self.source_path, self.date, sensor, force_reserialize=self.force_reserialize) for sensor in sensor_names]
         # Identify multi-sensor overlapping sequences for this day
@@ -524,22 +525,6 @@ class Source:
         date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
         dir_days = [entry for entry in os.listdir(self.path)
                     if os.path.isdir(os.path.join(self.path, entry)) and date_pattern.match(entry)]
-
-        if os.path.exists(self.plaster_path) and not self.force_reserialize:
-            with open(self.plaster_path, 'r') as json_file:
-                try:
-                    data = json.load(json_file)
-                    json_days = data.get('days', [])
-                except Exception:
-                    json_days = []
-
-            if set(json_days) == set(dir_days):
-                self.days = [Day(date, self.path, force_reserialize=self.force_reserialize, time_stamp_units=self.time_stamp_units) for date in json_days]
-                # Compute and write total duration even when using cached day list
-                self.duration = self.compute_total_duration()
-                self.serialize(self.plaster_path)
-                return
-            # else, update JSON below
 
         self.days = [Day(date, self.path, force_reserialize=self.force_reserialize, time_stamp_units=self.time_stamp_units) for date in dir_days]
         self.duration = self.compute_total_duration()
