@@ -19,11 +19,11 @@ Paste the copied public key to [https://github.com/settings/keys](https://github
 
 - Clone repo: `mkdir -p ~/code && cd ~/code && git clone git@github.com:brown-ivl/plaster.git`. Follow instructions in its repo for installation.
 
-- Setup shell functions and bashrc, and install services:
+- Setup shell functions and bashrc:
 ```
 cp ~/code/plaster/server/plaster.bashrc ~/.bashrc
-sudo cp ~/code/plaster/server/mount-data.* /opt/
-sudo chmod a+x /opt/mount-data.s*
+sudo cp ~/code/plaster/server/plaster-mount-data.sh /opt/
+sudo chmod a+x /opt/plaster-mount-data.sh
 ```
 
 - Set chrony configuration
@@ -41,7 +41,9 @@ sudo timedatectl set-timezone America/New_York
 sudo mkdir /mnt/brics-universe /mnt/brics-studio /mnt/project-bolt
 sudo chown $USER /mnt/brics-universe /mnt/brics-studio /mnt/project-bolt
 sudo chmod 770 /mnt/brics-universe /mnt/brics-studio /mnt/project-bolt
-sudo systemctl enable /opt/mount-data.service
+sudo cp ~/code/plaster/server/plaster-mount-data.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now plaster-mount-data
 sudo reboot
 ```
 
