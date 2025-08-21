@@ -5,7 +5,6 @@ Description=Run plaster-time.service every so often minutes
 # First run 5 minutes after boot, then every 10 minutes thereafter
 OnBootSec=2m
 OnUnitActiveSec=30s
-Unit=plaster-time.service
 Persistent=true
 
 [Install]
