@@ -1,0 +1,11 @@
+[Unit]
+Description=Run plaster-space.service every so often
+
+[Timer]
+# First run 5 minutes after boot, then every 2 hours
+OnBootSec=5m
+OnUnitActiveSec=120m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
