@@ -137,35 +137,27 @@ def encode_npy_dir_to_videos(
     out_h = h + pad_h
     out_w = w + pad_w
 
-    # Create writers: one per (layer, group)
-    writers: Dict[Tuple[int, int], any] = {}
+    # Stream frames, but avoid opening all writers at once to prevent encoder errors.
+    # Process one (layer, group) video at a time.
     for layer in range(f):
-        for g in range(groups_per_layer):
+        for g, plane_idxs in enumerate(mapping):
             out_path = os.path.join(output_dir, f"layer{layer:02d}_group{g:02d}.mp4")
-            writers[(layer, g)] = _open_writer(
+            writer = _open_writer(
                 out_path, fps=fps, codec=used_codec, crf=crf, pix_fmt=used_pix_fmt, extra_params=extra_params
             )
+            try:
+                for frame_idx, npy_path in enumerate(npy_paths):
+                    arr = np.load(npy_path)
+                    _h, _w, _c, _f, _dt = _validate_and_infer(arr)
+                    if (_h, _w, _c, _f) != (h, w, c, f) or _dt != dtype:
+                        raise ValueError(
+                            f"Frame {npy_path} has inconsistent shape/dtype: {arr.shape}, {arr.dtype}; expected {(h,w,c,f)}, {dtype}"
+                        )
 
-    # Stream frames
-    try:
-        for frame_idx, npy_path in enumerate(npy_paths):
-            arr = np.load(npy_path)
-            _h, _w, _c, _f, _dt = _validate_and_infer(arr)
-            if (_h, _w, _c, _f) != (h, w, c, f) or _dt != dtype:
-                raise ValueError(
-                    f"Frame {npy_path} has inconsistent shape/dtype: {arr.shape}, {arr.dtype}; expected {(h,w,c,f)}, {dtype}"
-                )
+                    arr = np.ascontiguousarray(arr)
+                    byte_view = arr.view(np.uint8).reshape(h, w, c, f, num_bytes)
+                    planes_stack = byte_view[:, :, :, layer, :].reshape(h, w, planes_per_layer)
 
-            # Ensure contiguous for safe view
-            arr = np.ascontiguousarray(arr)
-            # View floats as bytes: shape (H, W, C, F, num_bytes)
-            byte_view = arr.view(np.uint8).reshape(h, w, c, f, num_bytes)
-
-            for layer in range(f):
-                # Stack planes: (H, W, c*num_bytes)
-                planes_stack = byte_view[:, :, :, layer, :].reshape(h, w, planes_per_layer)
-
-                for g, plane_idxs in enumerate(mapping):
                     # Assemble RGB frame
                     if pad_h or pad_w:
                         frame_rgb = np.zeros((out_h, out_w, 3), dtype=np.uint8)
@@ -190,14 +182,12 @@ def encode_npy_dir_to_videos(
                     else:
                         to_write = rgb
 
-                    writers[(layer, g)].append_data(to_write)
-    finally:
-        # Always close writers
-        for wtr in writers.values():
-            try:
-                wtr.close()
-            except Exception:
-                pass
+                    writer.append_data(to_write)
+            finally:
+                try:
+                    writer.close()
+                except Exception:
+                    pass
 
     manifest = Manifest(
         version="1.0",
@@ -209,9 +199,9 @@ def encode_npy_dir_to_videos(
         channels=c,
         layers=f,
         num_frames=len(npy_paths),
-        fps=fps,
+    fps=fps,
     codec=used_codec,
-        crf=crf,
+    crf=crf,
     pix_fmt=used_pix_fmt,
         pad_h=pad_h,
         pad_w=pad_w,
@@ -240,15 +230,6 @@ def decode_videos_to_npy_dir(video_dir: str, output_dir: str) -> None:
 
     os.makedirs(output_dir, exist_ok=True)
 
-    # Open readers
-    readers: Dict[Tuple[int, int], any] = {}
-    for layer in range(man.layers):
-        for g in range(man.groups_per_layer):
-            path = os.path.join(video_dir, f"layer{layer:02d}_group{g:02d}.mp4")
-            if not os.path.exists(path):
-                raise FileNotFoundError(f"Missing video file: {path}")
-            readers[(layer, g)] = _open_reader(path)
-
     out_h = man.height + man.pad_h
     out_w = man.width + man.pad_w
     dtype = np.dtype(man.dtype)
@@ -263,7 +244,17 @@ def decode_videos_to_npy_dir(video_dir: str, output_dir: str) -> None:
             planes_stack = np.empty((man.height, man.width, man.planes_per_layer), dtype=np.uint8)
 
             for g, plane_idxs in enumerate(man.group_mapping):
-                frame_rgb = readers[(layer, g)].get_data(t)
+                path = os.path.join(video_dir, f"layer{layer:02d}_group{g:02d}.mp4")
+                if not os.path.exists(path):
+                    raise FileNotFoundError(f"Missing video file: {path}")
+                rdr = _open_reader(path)
+                try:
+                    frame_rgb = rdr.get_data(t)
+                finally:
+                    try:
+                        rdr.close()
+                    except Exception:
+                        pass
                 if frame_rgb.shape[0] != out_h or frame_rgb.shape[1] != out_w:
                     raise ValueError(
                         f"Unexpected frame size in layer {layer} group {g}: {frame_rgb.shape}; expected {(out_h, out_w)}"
@@ -284,12 +275,7 @@ def decode_videos_to_npy_dir(video_dir: str, output_dir: str) -> None:
         out_path = os.path.join(output_dir, out_name)
         np.save(out_path, arr)
 
-    # Close readers
-    for rdr in readers.values():
-        try:
-            rdr.close()
-        except Exception:
-            pass
+    # Readers are opened and closed per access above.
 
 
 # Write a basic usage example. Use argparse
