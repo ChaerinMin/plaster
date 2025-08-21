@@ -186,8 +186,8 @@ def calibrate_camera_from_primer(frames: Any,
 
         sift_options = pycolmap.SiftExtractionOptions()
         sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
-        
-        print(f"Stage 1 ({stage1_camera_model}) calibration started")
+
+        print(f"Stage 1 ({stage1_camera_model} and {str(stage1_camera_mode)}) calibration started")
         pycolmap.extract_features(database_path=stage1_database_path, image_path=stage1_image_dir, camera_mode=stage1_camera_mode, camera_model=stage1_camera_model, sift_options=sift_options)
 
         pycolmap.match_exhaustive(database_path=stage1_database_path)
@@ -250,9 +250,9 @@ def calibrate_camera_from_primer(frames: Any,
         # for sh_file in sh_files:
         #     shutil.rmtree(sh_file, ignore_errors=True)
             
-        print(f"Stage 1 ({stage1_camera_model}) calibration completed with {len(stage1_reconstruction)} reconstructions and {stage1_reconstruction[0].num_frames()} images for the first model.")
+        print(f"Stage 1 ({stage1_camera_model} and {str(stage1_camera_mode)}) calibration completed with {len(stage1_reconstruction)} reconstructions and {stage1_reconstruction[0].num_frames()} images for the first model.")
     except Exception as e:
-        print(f"Stage 1 ({stage1_camera_model}) calibration failed: {e}. Not proceeding to Stage 2. Exiting.")
+        print(f"Stage 1 ({stage1_camera_model} and {str(stage1_camera_mode)}) calibration failed: {e}. Not proceeding to Stage 2. Exiting.")
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
 
     try:
@@ -263,7 +263,7 @@ def calibrate_camera_from_primer(frames: Any,
         sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
         # SIMPLE_PINHOLE, PINHOLE: Use these camera models, if your images are undistorted a priori. These use one and two focal length parameters, respectively. Note that even in the case of undistorted images, COLMAP could try to improve the intrinsics with a more complex camera model.
         # OPENCV, FULL_OPENCV: Use these camera models, if you know the calibration parameters a priori. You can also try to let COLMAP estimate the parameters, if you share the intrinsics for multiple images. Note that the automatic estimation of parameters will most likely fail, if every image has a separate set of intrinsic parameters.
-        print(f"Stage 2 ({stage2_camera_model}) calibration started")
+        print(f"Stage 2 ({stage2_camera_model} and {str(stage2_camera_mode)}) calibration started")
         pycolmap.extract_features(database_path=stage2_database_path, image_path=stage2_image_dir, camera_mode=stage2_camera_mode, camera_model=stage2_camera_model, sift_options=sift_options)
 
         pycolmap.match_exhaustive(database_path=stage2_database_path)
@@ -302,7 +302,7 @@ def calibrate_camera_from_primer(frames: Any,
         with open(os.path.join(output_dir, f"final_cam_params.json"), "w") as f:
             f.write(json.dumps(final_cam_params, indent=4))
 
-        print(f"Stage 2 ({stage2_camera_model}) calibration completed")
+        print(f"Stage 2 ({stage2_camera_model} and {str(stage2_camera_mode)}) calibration completed")
 
         return {"success": True,
                 "message": f"Calibration succeeded with {best_recon.num_frames()} images",
