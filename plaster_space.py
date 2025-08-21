@@ -5,6 +5,7 @@ import os
 import json
 import primer
 import shutil
+import datetime
 from calibration import calibrate_camera_from_primer
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
@@ -24,33 +25,39 @@ if __name__ == "__main__":
         exit(1)
     source_plaster = json.load(open(source_plaster_path, 'r'))
 
-    # # Now let's use primer to get the data for spatial sensor calibration
-    # for day in source_plaster["days"]:
-    #     print(f"Calibrating multisequences in day: {day}")
-    #     day_plaster = json.load(open(os.path.join(args.source, day, "plaster.json"), 'r'))
-
-    #     for ms in day_plaster["multisequences"]:
-    # DEBUG
-    if True:
-        if True:
-            ms = dict()
-            # Baby dancing multisequence
-            # args.source = "/oscar/data/ssrinath//brics/non-pii/brics-studio"
-            args.source = "/mnt/brics-studio"
-            day = "2025-03-28" # brics-studio, multisequence000001
-            ms["name"] = "multisequence000001"
-            # # CS Lawn multisequence
-            # # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
-            # args.source = "/mnt/brics-universe"
-            # day = "2025-05-14" # brics-universe, multisequence000003
-            # ms["name"] = "multisequence000003"
-            # # 191 Medway
-            # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
-            # day = "2025-05-11" # brics-universe, multisequence000003
-            # ms["name"] = "multisequence000001"
+    # # DEBUG
+    # if True:
+    #     if True:
+    #         ms = dict()
+    #         # Baby dancing multisequence
+    #         # args.source = "/oscar/data/ssrinath//brics/non-pii/brics-studio"
+    #         args.source = "/mnt/brics-studio"
+    #         day = "2025-03-28" # brics-studio, multisequence000001
+    #         ms["name"] = "multisequence000001"
+    #         # # CS Lawn multisequence
+    #         # # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
+    #         # args.source = "/mnt/brics-universe"
+    #         # day = "2025-05-14" # brics-universe, multisequence000003
+    #         # ms["name"] = "multisequence000003"
+    #         # # 191 Medway
+    #         # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
+    #         # day = "2025-05-11" # brics-universe, multisequence000003
+    #         # ms["name"] = "multisequence000001"
             
+    # Now let's use primer to get the data for spatial sensor calibration
+    double_force_reserialize = args.force_reserialize
+    today = datetime.now().strftime('%Y-%m-%d') # Get today's date in YYYY-MM-DD format
+    for day in source_plaster["days"]:
+        print(f"Calibrating multisequences in day: {day}")
+
+        if day == today:
+            double_force_reserialize = True
+            print(f"Today's date ({today}) found in source plaster. Force reserialize is set to {double_force_reserialize}.")
+            
+        day_plaster = json.load(open(os.path.join(args.source, day, "plaster.json"), 'r'))
+        for ms in day_plaster["multisequences"]:
             calib_dir = os.path.join(args.source, day, ms["name"], "calib")
-            if os.path.exists(calib_dir) and args.force_reserialize:
+            if os.path.exists(calib_dir) and double_force_reserialize:
                 print(f"Removing existing calibration directory: {calib_dir}")
                 shutil.rmtree(calib_dir)
 
@@ -60,12 +67,9 @@ if __name__ == "__main__":
 
             frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"]]
 
-            # frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"][:10]]
-            # print(f'DEBUG with {frame_data.__len__()} images.')
-            
             calib_res = calibrate_camera_from_primer(
                 frames=frame_data,
                 output_dir=calib_dir,
-                clear_previous=args.force_reserialize,
+                clear_previous=double_force_reserialize,
             )
             print(f"Calibration: {calib_res}")
