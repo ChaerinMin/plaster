@@ -181,3 +181,20 @@ gitc()
 # Customize prompt
 # PS1="\t $PS1"
 PS1="[$BColor_Off\@] $BRed\u$Color_Off@$BGreen\h$Color_Off:$Yellow\w$Color_Off \$ "
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/srinath/opt/anaconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/srinath/opt/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/srinath/opt/anaconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/srinath/opt/anaconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+
+conda activate plaster

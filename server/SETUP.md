@@ -23,6 +23,7 @@ Paste the copied public key to [https://github.com/settings/keys](https://github
 ```
 cp ~/code/plaster/server/plaster.bashrc ~/.bashrc
 sudo cp ~/code/plaster/server/mount-data.* /opt/
+sudo chmod a+x /opt/mount-data.s*
 ```
 
 - Set chrony configuration
