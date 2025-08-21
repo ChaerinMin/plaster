@@ -67,6 +67,10 @@ if __name__ == "__main__":
             if os.path.exists(calib_dir) and double_force_reserialize:
                 print(f"Removing existing calibration directory: {calib_dir}")
                 shutil.rmtree(calib_dir)
+                
+            if os.path.exists(calib_dir) and not double_force_reserialize:
+                print(f"Calibration directory already exists: {calib_dir}. Skipping calibration for this multisequence.")
+                continue
 
             print(f"Processing multisequence: {ms['name']}")
             dataloader = primer.Primer(args.source, day, ms["name"])
