@@ -53,13 +53,18 @@ sudo reboot
 # Install the systemd units
 sudo cp ~/code/plaster/server/plaster-time.service /etc/systemd/system/
 sudo cp ~/code/plaster/server/plaster-time.timer /etc/systemd/system/
+sudo cp ~/code/plaster/server/plaster-space.service /etc/systemd/system/
+sudo cp ~/code/plaster/server/plaster-space.timer /etc/systemd/system/
 
 # Reload systemd and enable the timer
 sudo systemctl daemon-reload
 sudo systemctl enable --now plaster-time.timer
+sudo systemctl enable --now plaster-space.timer
 
 # Optional: check status and next run time
 systemctl status plaster-time.timer
 systemctl list-timers --all | grep plaster-time
+systemctl status plaster-space.timer
+systemctl list-timers --all | grep plaster-space
 ```
 

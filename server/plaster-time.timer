@@ -1,5 +1,5 @@
 [Unit]
-Description=Run plaster-time.service every so often minutes
+Description=Run plaster-time.service every so often
 
 [Timer]
 # First run 5 minutes after boot, then every 10 minutes thereafter
