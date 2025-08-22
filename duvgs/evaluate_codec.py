@@ -6,9 +6,6 @@ from typing import Tuple
 
 import numpy as np
 
-from duvgs import encode_npy_dir_to_videos, decode_videos_to_npy_dir
-
-
 def compute_errors(orig_dir: str, recon_dir: str) -> Tuple[float, float, float]:
     orig_files = [f for f in os.listdir(orig_dir) if f.lower().endswith(".npy")]
     recon_files = [f for f in os.listdir(recon_dir) if f.lower().endswith(".npy")]
