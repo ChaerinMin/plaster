@@ -2,6 +2,9 @@ import json
 import math
 import os
 import sys
+import tarfile
+import tempfile
+import shutil
 from dataclasses import dataclass, asdict, field
 from typing import Dict, List, Tuple, Optional
 
@@ -13,6 +16,9 @@ except Exception as e:  # pragma: no cover - dependency/runtime specific
     raise RuntimeError(
         "imageio is required. Please install with `pip install imageio imageio-ffmpeg`"
     ) from e
+
+def _notify(msg: str) -> None:
+    print(msg, flush=True)
 
 @dataclass
 class Manifest:
@@ -98,7 +104,7 @@ def _validate_and_infer(arr: np.ndarray) -> Tuple[int, int, int, int, np.dtype]:
 
 def encode_npy_dir_to_videos(
     input_dir: str,
-    output_dir: str,
+    output_path: str,
     fps: int = 30,
     crf: int = 0,
     codec: str = "libx264",
@@ -108,11 +114,24 @@ def encode_npy_dir_to_videos(
 ) -> str:
     """
     Encode a directory of .npy frames (shape: H x W x C x F, dtype float32/float64)
-    into multiple H.264 video files, packing 3 byte-planes per video as RGB.
+    into multiple H.264 video files, packing 3 planes per video as RGB.
 
-    Returns the path to the manifest.json written in output_dir.
+    If output_path ends with .tar/.tar.gz/.tgz/.tar.bz2/.tar.xz, a single tar archive is created
+    containing all the videos and manifest.json. Otherwise, a directory is created at output_path.
+
+    Returns the path to the resulting tar or directory.
     """
-    os.makedirs(output_dir, exist_ok=True)
+    # Decide archive vs directory output
+    _lower = output_path.lower()
+    _is_tar = _lower.endswith(".tar") or _lower.endswith(".tar.gz") or _lower.endswith(".tgz") \
+        or _lower.endswith(".tar.bz2") or _lower.endswith(".tar.xz")
+
+    if _is_tar:
+        work_dir = tempfile.mkdtemp(prefix="duv_encode_")
+        _notify(f"Output is tar archive. Staging files in {work_dir}")
+    else:
+        work_dir = output_path
+        os.makedirs(work_dir, exist_ok=True)
     npy_paths = _sorted_npy_files(input_dir)
     if not npy_paths:
         raise FileNotFoundError(f"No .npy files found in {input_dir}")
@@ -133,7 +152,9 @@ def encode_npy_dir_to_videos(
             raise ValueError("Only 8-bit quantization is supported currently")
         q_min = np.full((c,), np.inf, dtype=np.float64)
         q_max = np.full((c,), -np.inf, dtype=np.float64)
-        for npy_path in npy_paths:
+        _notify(f"Scanning {len(npy_paths)} files to compute per-channel min/max for quantization...")
+        _rep_every = max(1, len(npy_paths) // 20)
+        for _idx, npy_path in enumerate(npy_paths):
             arr = np.load(npy_path)
             _h, _w, _c, _f, _dt = _validate_and_infer(arr)
             if (_h, _w, _c, _f) != (h, w, c, f) or _dt != dtype:
@@ -152,6 +173,10 @@ def encode_npy_dir_to_videos(
                         q_min[ch] = vmin
                     if vmax > q_max[ch]:
                         q_max[ch] = vmax
+            # periodic progress
+            if (_idx % _rep_every) == 0 or _idx == len(npy_paths) - 1:
+                _notify(f"  scanned {_idx+1}/{len(npy_paths)} files")
+        _notify("Quantization scan complete.")
         # Handle channels that had no finite values
         for ch in range(c):
             if not np.isfinite(q_min[ch]) or not np.isfinite(q_max[ch]):
@@ -173,7 +198,7 @@ def encode_npy_dir_to_videos(
         # Let encoder choose appropriate output pixel fmt; input is rgb24 via imageio
         used_pix_fmt = None
         # Ensure true lossless and avoid limited range scaling
-        extra_params.extend(["-preset", "medium", "-color_range", "pc"])  # sensible default
+        extra_params.extend(["-preset", "medium", "-color_range", "pc", "-loglevel", "error"])  # sensible default
 
     def _needs_even_dims(fmt: Optional[str]) -> bool:
         return bool(fmt) and (fmt.startswith("yuv420") or fmt.startswith("yuv422"))
@@ -189,9 +214,15 @@ def encode_npy_dir_to_videos(
 
     # Stream frames, but avoid opening all writers at once to prevent encoder errors.
     # Process one (layer, group) video at a time.
+    total_videos = f * groups_per_layer
+    _notify(
+        f"Encoding {total_videos} videos (layers={f}, groups/layer={groups_per_layer}), frames/video={len(npy_paths)}"
+    )
+    _vid_idx = 0
     for layer in range(f):
         for g, plane_idxs in enumerate(mapping):
-            out_path = os.path.join(output_dir, f"layer{layer:02d}_group{g:02d}.mp4")
+            out_path = os.path.join(work_dir, f"layer{layer:02d}_group{g:02d}.mp4")
+            _notify(f"[{_vid_idx+1}/{total_videos}] Encoding layer {layer+1}/{f}, group {g+1}/{groups_per_layer}...")
             writer = _open_writer(
                 out_path, fps=fps, codec=used_codec, crf=crf, pix_fmt=used_pix_fmt, extra_params=extra_params
             )
@@ -260,6 +291,8 @@ def encode_npy_dir_to_videos(
                     writer.close()
                 except Exception:
                     pass
+            _notify(f"Completed video {_vid_idx+1}/{total_videos}: {os.path.basename(out_path)}")
+            _vid_idx += 1
 
     manifest = Manifest(
         version="1.0",
@@ -288,20 +321,63 @@ def encode_npy_dir_to_videos(
         q_max=(q_max.tolist() if quantize and q_max is not None else []),
     )
 
-    manifest_path = os.path.join(output_dir, "manifest.json")
+    manifest_path = os.path.join(work_dir, "manifest.json")
     with open(manifest_path, "w") as fobj:
         json.dump(asdict(manifest), fobj, indent=2)
 
-    return manifest_path
+    # If tar requested, pack files and cleanup staging directory
+    if _is_tar:
+        # Choose compression mode
+        if _lower.endswith(".tar.gz") or _lower.endswith(".tgz"):
+            mode = "w:gz"
+        elif _lower.endswith(".tar.bz2"):
+            mode = "w:bz2"
+        elif _lower.endswith(".tar.xz"):
+            mode = "w:xz"
+        else:
+            mode = "w"
+        tar_path = output_path
+        _notify(f"Creating archive: {tar_path}")
+        with tarfile.open(tar_path, mode) as tf:
+            for name in sorted(os.listdir(work_dir)):
+                full = os.path.join(work_dir, name)
+                tf.add(full, arcname=name)
+        shutil.rmtree(work_dir, ignore_errors=True)
+        _notify(f"Encoding complete. Archive written to: {tar_path}")
+        return tar_path
+    else:
+        _notify(f"Encoding complete. Manifest written to: {manifest_path}")
+        return manifest_path
 
 
-def decode_videos_to_npy_dir(video_dir: str, output_dir: str) -> None:
+def decode_videos_to_npy_dir(video_source: str, output_dir: str) -> None:
     """
     Decode videos produced by encode_npy_dir_to_videos back to a directory of .npy files.
+    video_source may be either a directory containing manifest.json and videos, or
+    a tar archive (.tar/.tar.gz/.tgz/.tar.bz2/.tar.xz) containing those files.
     """
-    manifest_path = os.path.join(video_dir, "manifest.json")
+    # Determine working directory (extract tar if needed)
+    cleanup_dir: Optional[str] = None
+    if os.path.isdir(video_source):
+        work_dir = video_source
+    elif os.path.isfile(video_source):
+        lower = video_source.lower()
+        is_tar = lower.endswith(".tar") or lower.endswith(".tar.gz") or lower.endswith(".tgz") \
+            or lower.endswith(".tar.bz2") or lower.endswith(".tar.xz")
+        if not is_tar:
+            raise FileNotFoundError(f"Unsupported input file (expecting tar archive): {video_source}")
+        work_dir = tempfile.mkdtemp(prefix="duv_decode_")
+        cleanup_dir = work_dir
+        _notify(f"Extracting archive to {work_dir}")
+        # Detect compression automatically by mode 'r:*'
+        with tarfile.open(video_source, "r:*") as tf:
+            tf.extractall(work_dir)
+    else:
+        raise FileNotFoundError(f"Input path not found: {video_source}")
+
+    manifest_path = os.path.join(work_dir, "manifest.json")
     if not os.path.exists(manifest_path):
-        raise FileNotFoundError(f"manifest.json not found in {video_dir}")
+        raise FileNotFoundError(f"manifest.json not found in {work_dir}")
     with open(manifest_path, "r") as fobj:
         man = Manifest(**json.load(fobj))
 
@@ -312,7 +388,13 @@ def decode_videos_to_npy_dir(video_dir: str, output_dir: str) -> None:
     dtype = np.dtype(man.dtype)
     num_bytes = man.itemsize
 
+    _notify(
+        f"Decoding {man.num_frames} frames (layers={man.layers}, groups/layer={man.groups_per_layer}) from {work_dir}"
+    )
+    _report_every = max(1, man.num_frames // 20)
     for t in range(man.num_frames):
+        if (t % _report_every) == 0 or t == man.num_frames - 1:
+            _notify(f"Decoding frame {t+1}/{man.num_frames}")
         # If quantized, collect uint8 per-channel; else, collect raw bytes
         if man.quantize:
             frame_q = np.empty((man.height, man.width, man.channels, man.layers), dtype=np.uint8)
@@ -325,7 +407,7 @@ def decode_videos_to_npy_dir(video_dir: str, output_dir: str) -> None:
             planes_stack = np.empty((man.height, man.width, man.planes_per_layer), dtype=np.uint8)
 
             for g, plane_idxs in enumerate(man.group_mapping):
-                path = os.path.join(video_dir, f"layer{layer:02d}_group{g:02d}.mp4")
+                path = os.path.join(work_dir, f"layer{layer:02d}_group{g:02d}.mp4")
                 if not os.path.exists(path):
                     raise FileNotFoundError(f"Missing video file: {path}")
                 rdr = _open_reader(path)
@@ -375,4 +457,7 @@ def decode_videos_to_npy_dir(video_dir: str, output_dir: str) -> None:
         np.save(out_path, arr)
 
     # Readers are opened and closed per access above.
+    _notify(f"Decoding complete. NPY files written to: {output_dir}")
+    if cleanup_dir:
+        shutil.rmtree(cleanup_dir, ignore_errors=True)
 

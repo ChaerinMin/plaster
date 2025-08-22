@@ -5,7 +5,7 @@ from duvgs import encode_npy_dir_to_videos
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Encode NPY files to H.264 videos")
     parser.add_argument("input_dir", help="Input directory containing .npy files")
-    parser.add_argument("output_dir", help="Output directory for H.264 videos")
+    parser.add_argument("output_path", help="Output .tar[.gz|.bz2|.xz] file or directory for videos")
     parser.add_argument("--fps", type=int, default=30, help="Frames per second")
     parser.add_argument("--crf", type=int, default=23, help="Constant Rate Factor (0=lossless)")
     parser.add_argument("--codec", default="libx264", help="Video codec")
@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     encode_npy_dir_to_videos(
         args.input_dir,
-        args.output_dir,
+    args.output_path,
         fps=args.fps,
         crf=args.crf,
         codec=args.codec,
