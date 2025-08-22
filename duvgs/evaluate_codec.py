@@ -21,8 +21,8 @@ def compute_errors(orig_dir: str, recon_dir: str) -> Tuple[float, float, float]:
     for fname in orig_files:
         a = np.load(os.path.join(orig_dir, fname))
         b = np.load(os.path.join(recon_dir, fname))
-        print(f"Comparing {fname}:")
-        print(f"Shapes: {a.shape} vs {b.shape}, Dtypes: {a.dtype} vs {b.dtype}")
+        # print(f"Comparing {fname}:")
+        # print(f"Shapes: {a.shape} vs {b.shape}, Dtypes: {a.dtype} vs {b.dtype}")
         if a.shape != b.shape or a.dtype != b.dtype:
             raise RuntimeError(f"Mismatch for {fname}: {a.shape}/{a.dtype} vs {b.shape}/{b.dtype}")
 
