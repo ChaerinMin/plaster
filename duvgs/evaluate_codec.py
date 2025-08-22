@@ -17,6 +17,7 @@ def compute_errors(orig_dir: str, recon_dir: str) -> Tuple[float, float, float]:
     if orig_files != recon_files:
         raise RuntimeError("Original and reconstructed directories have different file sets")
 
+    print(f"Comparing {len(orig_files)} files in {orig_dir} and {recon_dir}")
     max_abs = 0.0
     mae_sum = 0.0
     count = 0
