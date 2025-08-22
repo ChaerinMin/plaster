@@ -25,17 +25,35 @@ def compute_errors(orig_dir: str, recon_dir: str) -> Tuple[float, float, float]:
         print(f"Shapes: {a.shape} vs {b.shape}, Dtypes: {a.dtype} vs {b.dtype}")
         if a.shape != b.shape or a.dtype != b.dtype:
             raise RuntimeError(f"Mismatch for {fname}: {a.shape}/{a.dtype} vs {b.shape}/{b.dtype}")
-        diff = np.abs(a - b)
-        max_abs = np.max(max_abs, float(diff.max()))
-        mae_sum += float(diff.mean())
-        print(f"{fname}: MaxAbsError={diff.max()}, MeanAbsError={diff.mean()}")
+
+        # Compute absolute difference only on finite entries to avoid NaN/Inf propagation
+        finite_mask = np.isfinite(a) & np.isfinite(b)
+        if not np.all(finite_mask):
+            bad = a.size - int(finite_mask.sum())
+            print(f"Warning: {bad} non-finite elements skipped in {fname}")
+
+        if finite_mask.any():
+            diff_vals = np.abs(a[finite_mask] - b[finite_mask])
+            file_max = float(diff_vals.max())
+            file_mean = float(diff_vals.mean())
+        else:
+            # No comparable finite values
+            file_max = 0.0
+            file_mean = 0.0
+
+        max_abs = max(max_abs, file_max)
+        mae_sum += file_mean
+        print(f"{fname}: MaxAbsError={file_max}, MeanAbsError={file_mean}")
         count += 1
     mae = mae_sum / max(count, 1)
-    # Relative MAE normalized by dynamic range (per-file mean). Avoid div by zero.
-    # Here we approximate using overall range from first file.
+    # Relative MAE normalized by dynamic range (approx. from first file). Avoid NaNs/div by zero.
     if count > 0:
         a0 = np.load(os.path.join(orig_dir, orig_files[0]))
-        rng = float(a0.max() - a0.min())
+        fm = np.isfinite(a0)
+        if fm.any():
+            rng = float(np.max(a0[fm]) - np.min(a0[fm]))
+        else:
+            rng = 0.0
     else:
         rng = 0.0
     rel_mae = mae / rng if rng > 0 else 0.0
