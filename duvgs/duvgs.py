@@ -49,9 +49,11 @@ def _sorted_npy_files(input_dir: str) -> List[str]:
     return [os.path.join(input_dir, f) for f in files]
 
 
-def _open_writer(path: str, fps: int, codec: str, crf: int, pix_fmt: str, extra_params: Optional[List[str]] = None):
+def _open_writer(path: str, fps: int, codec: str, crf: int, pix_fmt: Optional[str], extra_params: Optional[List[str]] = None):
     # Prefer explicit ffmpeg backend
-    ffparams = ["-crf", str(crf), "-pix_fmt", pix_fmt]
+    ffparams = ["-crf", str(crf)]
+    if pix_fmt:
+        ffparams.extend(["-pix_fmt", pix_fmt])
     if extra_params:
         ffparams.extend(extra_params)
     params = dict(fps=fps, codec=codec, format="ffmpeg", ffmpeg_params=ffparams)
@@ -163,17 +165,18 @@ def encode_npy_dir_to_videos(
 
     # Choose codec/pix_fmt combinations and padding rules
     used_codec = codec
-    used_pix_fmt = pix_fmt
+    used_pix_fmt: Optional[str] = pix_fmt
     extra_params: List[str] = []
-    # Prefer libx264rgb to avoid YUV conversions when lossless or quantized
-    if codec == "libx264" and (crf == 0 or (quantize and pix_fmt.startswith("yuv"))):
+    # Prefer libx264rgb to avoid YUV conversions when using RGB data or quantized path
+    if codec == "libx264" and (quantize or (pix_fmt and pix_fmt.startswith("rgb")) or crf == 0):
         used_codec = "libx264rgb"
-        used_pix_fmt = "rgb24"
+        # Let encoder choose appropriate output pixel fmt; input is rgb24 via imageio
+        used_pix_fmt = None
         # Ensure true lossless and avoid limited range scaling
         extra_params.extend(["-preset", "medium", "-color_range", "pc"])  # sensible default
 
-    def _needs_even_dims(fmt: str) -> bool:
-        return fmt.startswith("yuv420") or fmt.startswith("yuv422")
+    def _needs_even_dims(fmt: Optional[str]) -> bool:
+        return bool(fmt) and (fmt.startswith("yuv420") or fmt.startswith("yuv422"))
 
     if _needs_even_dims(used_pix_fmt):
         pad_h = h % 2
