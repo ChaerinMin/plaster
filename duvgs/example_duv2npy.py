@@ -14,9 +14,5 @@ if __name__ == "__main__":
 
     decode_videos_to_npy_dir(
         args.input_dir,
-        args.output_dir,
-        fps=args.fps,
-        crf=args.crf,
-        codec=args.codec,
-        pix_fmt=args.pix_fmt,
+        args.output_dir
     )
