@@ -26,9 +26,9 @@ def compute_errors(orig_dir: str, recon_dir: str) -> Tuple[float, float, float]:
         if a.shape != b.shape or a.dtype != b.dtype:
             raise RuntimeError(f"Mismatch for {fname}: {a.shape}/{a.dtype} vs {b.shape}/{b.dtype}")
         diff = np.abs(a - b)
-        max_abs = max(max_abs, float(diff.max()))
-        mae_sum += float(diff.mean())
-        print(f"{fname}: MaxAbsError={diff.max()}, MeanAbsError={diff.mean()}")
+        max_abs = np.nanmax(max_abs, float(diff.nanmax()))
+        mae_sum += float(diff.nanmean())
+        print(f"{fname}: MaxAbsError={diff.nanmax()}, MeanAbsError={diff.nanmean()}")
         count += 1
     mae = mae_sum / max(count, 1)
     # Relative MAE normalized by dynamic range (per-file mean). Avoid div by zero.
