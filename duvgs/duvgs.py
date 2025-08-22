@@ -2,7 +2,7 @@ import json
 import math
 import os
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from typing import Dict, List, Tuple, Optional
 
 import numpy as np
@@ -35,6 +35,12 @@ class Manifest:
     planes_per_layer: int
     group_mapping: List[List[int]]  # per group, list of plane indices (<=3, -1 means padded)
     frame_files: List[str]
+    # Quantization metadata (present when quantize=True)
+    quantize: bool = False
+    quant_bits: int = 8
+    q_method: str = "linear"
+    q_min: List[float] = field(default_factory=list)  # per-channel
+    q_max: List[float] = field(default_factory=list)  # per-channel
 
 
 def _sorted_npy_files(input_dir: str) -> List[str]:
@@ -92,9 +98,11 @@ def encode_npy_dir_to_videos(
     input_dir: str,
     output_dir: str,
     fps: int = 30,
-    crf: int = 18,
+    crf: int = 0,
     codec: str = "libx264",
-    pix_fmt: str = "yuv420p",
+    pix_fmt: str = "rgb24",
+    quantize: Optional[bool] = None,
+    quant_bits: int = 8,
 ) -> str:
     """
     Encode a directory of .npy frames (shape: H x W x C x F, dtype float32/float64)
@@ -110,8 +118,46 @@ def encode_npy_dir_to_videos(
     # Inspect first frame for shape/dtype
     first = np.load(npy_paths[0], mmap_mode=None)
     h, w, c, f, dtype = _validate_and_infer(first)
+    if quantize is None:
+        quantize = crf > 0  # default: raw bytes for lossless (crf=0), quantize for lossy
+
     num_bytes = np.dtype(dtype).itemsize
-    planes_per_layer = c * num_bytes
+
+    # Quantization setup (per-channel, across all frames and layers)
+    q_min: Optional[np.ndarray] = None
+    q_max: Optional[np.ndarray] = None
+    if quantize:
+        if quant_bits != 8:
+            raise ValueError("Only 8-bit quantization is supported currently")
+        q_min = np.full((c,), np.inf, dtype=np.float64)
+        q_max = np.full((c,), -np.inf, dtype=np.float64)
+        for npy_path in npy_paths:
+            arr = np.load(npy_path)
+            _h, _w, _c, _f, _dt = _validate_and_infer(arr)
+            if (_h, _w, _c, _f) != (h, w, c, f) or _dt != dtype:
+                raise ValueError(
+                    f"Frame {npy_path} has inconsistent shape/dtype: {arr.shape}, {arr.dtype}; expected {(h,w,c,f)}, {dtype}"
+                )
+            # Update per-channel min/max over all layers and spatial dims
+            for ch in range(c):
+                vals = arr[:, :, ch, :]
+                fm = np.isfinite(vals)
+                if fm.any():
+                    ch_vals = vals[fm]
+                    vmin = float(ch_vals.min())
+                    vmax = float(ch_vals.max())
+                    if vmin < q_min[ch]:
+                        q_min[ch] = vmin
+                    if vmax > q_max[ch]:
+                        q_max[ch] = vmax
+        # Handle channels that had no finite values
+        for ch in range(c):
+            if not np.isfinite(q_min[ch]) or not np.isfinite(q_max[ch]):
+                q_min[ch] = 0.0
+                q_max[ch] = 1.0
+
+    # Planes per layer: either one per byte of each channel, or one per channel when quantized
+    planes_per_layer = c if quantize else c * num_bytes
     mapping = _build_group_mapping(planes_per_layer)
     groups_per_layer = len(mapping)
 
@@ -119,11 +165,12 @@ def encode_npy_dir_to_videos(
     used_codec = codec
     used_pix_fmt = pix_fmt
     extra_params: List[str] = []
-    # Use libx264rgb for lossless (crf=0) to avoid subsampling and ensure compatibility
-    if crf == 0 and codec == "libx264":
+    # Prefer libx264rgb to avoid YUV conversions when lossless or quantized
+    if codec == "libx264" and (crf == 0 or (quantize and pix_fmt.startswith("yuv"))):
         used_codec = "libx264rgb"
         used_pix_fmt = "rgb24"
-        extra_params.extend(["-preset", "medium"])  # sensible default
+        # Ensure true lossless and avoid limited range scaling
+        extra_params.extend(["-preset", "medium", "-color_range", "pc"])  # sensible default
 
     def _needs_even_dims(fmt: str) -> bool:
         return fmt.startswith("yuv420") or fmt.startswith("yuv422")
@@ -154,9 +201,31 @@ def encode_npy_dir_to_videos(
                             f"Frame {npy_path} has inconsistent shape/dtype: {arr.shape}, {arr.dtype}; expected {(h,w,c,f)}, {dtype}"
                         )
 
-                    arr = np.ascontiguousarray(arr)
-                    byte_view = arr.view(np.uint8).reshape(h, w, c, f, num_bytes)
-                    planes_stack = byte_view[:, :, :, layer, :].reshape(h, w, planes_per_layer)
+                    if quantize:
+                        # Quantize this layer's channels to 8-bit
+                        vals = arr[:, :, :, layer]
+                        # Handle non-finite by mapping them to 0 after scaling
+                        q = np.empty((h, w, c), dtype=np.uint8)
+                        for ch in range(c):
+                            v = vals[:, :, ch]
+                            fm = np.isfinite(v)
+                            # Avoid zero range
+                            mn = float(q_min[ch])
+                            mx = float(q_max[ch])
+                            rng = mx - mn
+                            if rng <= 0 or not np.isfinite(rng):
+                                # Flat channel or invalid range
+                                q[:, :, ch] = 0
+                            else:
+                                scaled = np.zeros_like(v, dtype=np.float32)
+                                scaled[fm] = (v[fm] - mn) / rng
+                                scaled = np.clip(scaled, 0.0, 1.0)
+                                q[:, :, ch] = np.round(scaled * 255.0).astype(np.uint8)
+                        planes_stack = q  # H x W x C
+                    else:
+                        arr = np.ascontiguousarray(arr)
+                        byte_view = arr.view(np.uint8).reshape(h, w, c, f, num_bytes)
+                        planes_stack = byte_view[:, :, :, layer, :].reshape(h, w, planes_per_layer)
 
                     # Assemble RGB frame
                     if pad_h or pad_w:
@@ -191,7 +260,7 @@ def encode_npy_dir_to_videos(
 
     manifest = Manifest(
         version="1.0",
-        dtype=str(np.dtype(dtype)),
+        dtype=np.dtype(dtype).str,  # preserve endianness (e.g. '<f4')
         itemsize=num_bytes,
         byteorder=sys.byteorder,
         height=h,
@@ -209,6 +278,11 @@ def encode_npy_dir_to_videos(
         planes_per_layer=planes_per_layer,
         group_mapping=mapping,
         frame_files=[os.path.basename(p) for p in npy_paths],
+        quantize=bool(quantize),
+        quant_bits=quant_bits if quantize else 0,
+        q_method="linear" if quantize else "",
+        q_min=(q_min.tolist() if quantize and q_min is not None else []),
+        q_max=(q_max.tolist() if quantize and q_max is not None else []),
     )
 
     manifest_path = os.path.join(output_dir, "manifest.json")
@@ -236,8 +310,12 @@ def decode_videos_to_npy_dir(video_dir: str, output_dir: str) -> None:
     num_bytes = man.itemsize
 
     for t in range(man.num_frames):
-        # Buffer for this frame's bytes: (H, W, C, F, num_bytes)
-        frame_bytes = np.empty((man.height, man.width, man.channels, man.layers, num_bytes), dtype=np.uint8)
+        # If quantized, collect uint8 per-channel; else, collect raw bytes
+        if man.quantize:
+            frame_q = np.empty((man.height, man.width, man.channels, man.layers), dtype=np.uint8)
+        else:
+            # Buffer for this frame's bytes: (H, W, C, F, num_bytes)
+            frame_bytes = np.empty((man.height, man.width, man.channels, man.layers, num_bytes), dtype=np.uint8)
 
         for layer in range(man.layers):
             # Collect all planes for this layer: (H, W, planes_per_layer)
@@ -265,12 +343,30 @@ def decode_videos_to_npy_dir(video_dir: str, output_dir: str) -> None:
                     if pidx >= 0:
                         planes_stack[:, :, pidx] = rgb[:, :, k]
 
-            # Reshape back to (H, W, C, num_bytes) for this layer and place into frame_bytes
-            layer_bytes = planes_stack.reshape(man.height, man.width, man.channels, num_bytes)
-            frame_bytes[:, :, :, layer, :] = layer_bytes
+            if man.quantize:
+                # planes_stack is (H, W, C) in quantized mode
+                frame_q[:, :, :, layer] = planes_stack
+            else:
+                # Reshape back to (H, W, C, num_bytes) for this layer and place into frame_bytes
+                layer_bytes = planes_stack.reshape(man.height, man.width, man.channels, num_bytes)
+                frame_bytes[:, :, :, layer, :] = layer_bytes
 
-        # View back to original dtype and shape
-        arr = frame_bytes.view(dtype).reshape(man.height, man.width, man.channels, man.layers)
+        if man.quantize:
+            # Dequantize back to float array
+            qmin = np.asarray(man.q_min, dtype=np.float64)
+            qmax = np.asarray(man.q_max, dtype=np.float64)
+            rng = qmax - qmin
+            rng[rng <= 0] = 1.0
+            # Scale from [0,255] to [qmin, qmax]
+            arr = frame_q.astype(np.float32) / 255.0
+            for ch in range(man.channels):
+                arr[:, :, ch, :] = arr[:, :, ch, :] * rng[ch] + qmin[ch]
+            # Cast to original dtype if desired (keep float32 for stability)
+            if dtype == np.float64:
+                arr = arr.astype(np.float64)
+        else:
+            # View back to original dtype and shape
+            arr = frame_bytes.view(dtype).reshape(man.height, man.width, man.channels, man.layers)
         out_name = man.frame_files[t]
         out_path = os.path.join(output_dir, out_name)
         np.save(out_path, arr)
