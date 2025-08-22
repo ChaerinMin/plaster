@@ -44,45 +44,13 @@ def compute_errors(orig_dir: str, recon_dir: str) -> Tuple[float, float, float]:
 def main():
     p = argparse.ArgumentParser(description="Evaluate NPY -> H264 videos -> NPY roundtrip error")
     p.add_argument("input_npy_dir", help="Directory with .npy frames (shape HxWxCxF)")
-    p.add_argument("output_video_dir", help="Directory to write H.264 videos")
-    p.add_argument("recon_npy_dir", nargs="?", help="Optional directory to write reconstructed .npy frames")
-    p.add_argument("--fps", type=int, default=30)
-    p.add_argument("--crf", type=int, default=18, help="H.264 constant rate factor (0 triggers libx264rgb lossless)")
-    p.add_argument("--codec", default="libx264")
-    p.add_argument("--pix_fmt", default="yuv420p")
+    p.add_argument("recon_npy_dir", nargs="?", help="Comparison Directory with .npy frames (shape HxWxCxF)")
     args = p.parse_args()
 
-    os.makedirs(args.output_video_dir, exist_ok=True)
-
-    manifest_path = encode_npy_dir_to_videos(
-        args.input_npy_dir,
-        args.output_video_dir,
-        fps=args.fps,
-        crf=args.crf,
-        codec=args.codec,
-        pix_fmt=args.pix_fmt,
-    )
-
-    # Choose reconstruction dir
-    cleanup = False
-    if args.recon_npy_dir:
-        recon_dir = args.recon_npy_dir
-        os.makedirs(recon_dir, exist_ok=True)
-    else:
-        recon_dir = tempfile.mkdtemp(prefix="recon_npy_")
-        cleanup = True
-
-    try:
-        decode_videos_to_npy_dir(args.output_video_dir, recon_dir)
-        max_abs, mae, rel_mae = compute_errors(args.input_npy_dir, recon_dir)
-        print(f"MaxAbsError: {max_abs}")
-        print(f"MeanAbsError: {mae}")
-        print(f"RelativeMAE: {rel_mae}")
-        print(f"Manifest: {manifest_path}")
-    finally:
-        if cleanup:
-            shutil.rmtree(recon_dir, ignore_errors=True)
-
+    max_abs, mae, rel_mae = compute_errors(args.input_npy_dir, args.recon_npy_dir)
+    print(f"MaxAbsError: {max_abs}")
+    print(f"MeanAbsError: {mae}")
+    print(f"RelativeMAE: {rel_mae}")
 
 if __name__ == "__main__":
     main()
