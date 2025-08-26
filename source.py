@@ -267,6 +267,8 @@ class Day:
 
         sensor_pattern = re.compile(r'^[A-Za-z0-9_\-]+$')
         sensor_names = [entry for entry in os.listdir(self.path) if sensor_pattern.match(entry)]
+        # We need to ignore any sensor directory that starts with "multisequence"
+        sensor_names = [name for name in sensor_names if not name.startswith("multisequence")]
 
         if os.path.exists(self.plaster_path) and not self.force_reserialize:
             # Only update duration and return
