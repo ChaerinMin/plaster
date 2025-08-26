@@ -2,9 +2,9 @@
 Description=Run plaster-space.service every so often
 
 [Timer]
-# First run 5 minutes after boot, then every 2 hours
-OnBootSec=5m
-OnUnitActiveSec=120m
+# First run X minutes after boot, then every Y minutes thereafter
+OnBootSec=2m
+OnUnitActiveSec=30s
 Persistent=true
 
 [Install]
