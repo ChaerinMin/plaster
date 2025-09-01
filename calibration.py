@@ -41,6 +41,15 @@ import json
 from primer.helpers import undistort_images
 import cv2
 
+# Check if VGGT is install for stage3 calibration
+try:
+    import vggt
+    import vggt_colmap
+    import argparse
+    VGGT_FOUND = True
+except ImportError:
+    VGGT_FOUND = False
+
 MAX_SIFT_FEATURES=25000
 
 def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
@@ -141,12 +150,16 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[in
 
 def calibrate_camera_from_primer(frames: Any,
                                  output_dir: str,
+                                 args: argparse.Namespace,
                                  clear_previous: bool = False,
                                  min_images: int = 5,
                                  stage1_camera_model: str = "OPENCV",
                                  stage1_camera_mode: pycolmap.CameraMode = pycolmap.CameraMode.SINGLE,
                                  stage2_camera_model: str = "PINHOLE",
-                                 stage2_camera_mode: pycolmap.CameraMode = pycolmap.CameraMode.SINGLE) -> Dict[str, Any]:
+                                 stage2_camera_mode: pycolmap.CameraMode = pycolmap.CameraMode.SINGLE,
+                                 stage3_camera_model: str = "PINHOLE",
+                                 stage3_camera_mode: pycolmap.CameraMode = pycolmap.CameraMode.SINGLE,
+                                 ) -> Dict[str, Any]:
     if len(frames) < min_images:
         return {"success": False, "message": f"Need >= {min_images} frames", "output_dir": output_dir}
     
@@ -160,9 +173,12 @@ def calibrate_camera_from_primer(frames: Any,
 
     stage1_dir = os.path.join(output_dir, "stage1")
     stage2_dir = os.path.join(output_dir, "stage2")
+    stage3_dir = os.path.join(output_dir, "stage3")
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(stage1_dir, exist_ok=True)
     os.makedirs(stage2_dir, exist_ok=True)
+    if VGGT_FOUND:
+        os.makedirs(stage3_dir, exist_ok=True)
 
     frame_path_list = _write_images(frames, os.path.join(stage1_dir, "images"))
     if len(frame_path_list) < min_images:
@@ -176,6 +192,11 @@ def calibrate_camera_from_primer(frames: Any,
                     "stage2_camera_mode": "UNKNOWN",
                     "stage2_params": None,
                 }
+    if VGGT_FOUND:
+        final_cam_params["stage3_model"] = "UNKNOWN"
+        final_cam_params["stage3_camera_mode"] = "UNKNOWN"
+        final_cam_params["stage3_params"] = None
+
     # We will follow a 2-stage strategy
     # Stage 1 assumes a single camera model for all cameras, extracts distortion parameters and undistorts the images
     # Stage 2 takes the undistorted images and refines the camera parameters using a PINHOLE model
@@ -217,6 +238,8 @@ def calibrate_camera_from_primer(frames: Any,
                 best_recon = recon
 
         stage2_image_dir = os.path.join(stage2_dir, "images")
+        if VGGT_FOUND:
+            stage3_image_dir = os.path.join(stage3_dir, "images")
             
         final_cam_params["stage1_model"] = str(stage1_camera_model)
         final_cam_params["stage1_camera_mode"] = str(stage1_camera_mode)
@@ -230,6 +253,8 @@ def calibrate_camera_from_primer(frames: Any,
                 print(f'Undistorting with {cam.params.tolist()}')
                 undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=stage1_camera_model)
                 cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
+                if VGGT_FOUND:
+                    cv2.imwrite(os.path.join(stage3_image_dir, f"{id}.jpg"), undist_img)
 
             break # Since we are assuming only 1 set of distortion parameters for all cameras
 
@@ -304,6 +329,14 @@ def calibrate_camera_from_primer(frames: Any,
             f.write(json.dumps(final_cam_params, indent=4))
 
         print(f"Stage 2 ({stage2_camera_model} and {str(stage2_camera_mode)}) calibration completed with {best_recon.num_frames()} images for the best reconstruction.")
+    except Exception as e:
+        print(f"Stage 2 ({stage2_camera_model} and {str(stage2_camera_mode)}) calibration failed: {e}. Not proceeding to Stage 3. Exiting.")
+        return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
+        
+    try:
+        print(f"VGGT Stage 3 ({stage3_camera_model} and {str(stage3_camera_mode)}) calibration started.")
+        if(args.run_vggt_stage3):
+            print('TODO: Run VGGT stage 3.')
 
         return {"success": True,
                 "message": f"Calibration succeeded with {best_recon.num_frames()} images",

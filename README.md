@@ -40,3 +40,16 @@ pip install "git+ssh://git@github.com/brown-ivl/timetree.git@main"
 # Install colmap
 pip install pycolmap
 ```
+
+### OPTIONAL: Use VGGT for spatial calibration
+
+VGGT might sometimes work better for spatial calibration in settings where COLMAP fails. Plaster Space supports using VGGT for a "stage3" calibration. In order to use this feature, follow the installation [instructions for VGGT here](https://github.com/facebookresearch/vggt). Specifically:
+
+```
+cd ~/code/vggt
+pip install -r requirements.txt
+pip install -r requirements_demo.txt
+pip install -e .
+```
+
+Note that VGGT Torch dependencies are not compatible with `plaster` and `primer`. But it should not matter. `plaster` is designed to be compatible with `<torch-2.0` but will also work with newer versions.
