@@ -40,12 +40,12 @@ import glob
 import json
 from primer.helpers import undistort_images
 import cv2
+import argparse
 
 # Check if VGGT is install for stage3 calibration
 try:
     import vggt
     import vggt_colmap
-    import argparse
     VGGT_FOUND = True
 except ImportError:
     VGGT_FOUND = False
@@ -335,8 +335,8 @@ def calibrate_camera_from_primer(frames: Any,
         
     try:
         print(f"VGGT Stage 3 ({stage3_camera_model} and {str(stage3_camera_mode)}) calibration started.")
-        if(args.run_vggt_stage3):
-            print('TODO: Run VGGT stage 3.')
+        if(args.run_vggt_stage3 and VGGT_FOUND):
+            vggt_colmap.demo_fn(args)
 
         return {"success": True,
                 "message": f"Calibration succeeded with {best_recon.num_frames()} images",
