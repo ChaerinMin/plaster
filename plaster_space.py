@@ -10,6 +10,9 @@ from calibration import calibrate_camera_from_primer
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
 parser.add_argument("-s", "--source", type=str, help="Path to the source directory", required=True)
+parser.add_argument("-d", "--day", type=str, help="If looking for a specific day.", required=False, default=None)
+parser.add_argument("--ms", type=str, help="If looking for a specific multisequence.", required=False, default=None)
+parser.add_argument("--time-thresh", type=float, default=20, help="Time sync threshold in ms.")
 parser.add_argument("-f", "--force-reserialize", action="store_true", help="Force reserialization of the source")
 parser.add_argument("--run-vggt-stage3", action="store_true", help="Run VGGT Stage 3 calibration if VGGT is available.")
 
@@ -50,32 +53,9 @@ if __name__ == "__main__":
     # Now let's use primer to get the data for spatial sensor calibration
     double_force_reserialize = args.force_reserialize
     today = datetime.now().strftime('%Y-%m-%d') # Get today's date in YYYY-MM-DD format
-    # # DEBUG
-    # if True:
-    #     if True:
-    #         ms = dict()
-    #         # # Baby dancing multisequence
-    #         # # args.source = "/oscar/data/ssrinath//brics/non-pii/brics-studio"
-    #         # args.source = "/mnt/brics-studio"
-    #         # day = "2025-03-28" # brics-studio, multisequence000001
-    #         # ms["name"] = "multisequence000001"
-    #         # # CS Lawn multisequence
-    #         # # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
-    #         # args.source = "/mnt/brics-universe"
-    #         # day = "2025-05-14" # brics-universe, multisequence000003
-    #         # ms["name"] = "multisequence000003"
-    #         # # 191 Medway
-    #         # args.source = "/oscar/data/ssrinath/brics/non-pii/brics-universe"
-    #         # day = "2025-05-11" # brics-universe, multisequence000003
-    #         # ms["name"] = "multisequence000001"
-    #         # Basketball pass multisequence
-    #         # args.source = "/oscar/data/ssrinath//brics/non-pii/brics-studio"
-    #         args.source = "/mnt/brics-studio"
-    #         day = "2025-04-23" # brics-studio, multisequence000001
-    #         ms["name"] = "multisequence000001"
-    # # END DEBUG
-    # PRODUCTION
     for day in source_plaster["days"]:
+        if args.day and day != args.day:
+            continue
         print(f"Calibrating multisequences in day: {day}")
 
         if day == today:
@@ -84,7 +64,8 @@ if __name__ == "__main__":
             
         day_plaster = json.load(open(os.path.join(args.source, day, "plaster.json"), 'r'))
         for ms in day_plaster["multisequences"]:
-    # END PRODUCTION
+            if args.ms and ms["name"] != args.ms:
+                continue
             calib_dir = os.path.join(args.source, day, ms["name"], "calib")
             if os.path.exists(calib_dir) and double_force_reserialize:
                 print(f"Removing existing calibration directory: {calib_dir}")
@@ -96,7 +77,7 @@ if __name__ == "__main__":
 
             print(f"Processing multisequence: {ms['name']}")
             dataloader = primer.Primer(args.source, day, ms["name"])
-            data = dataloader.get_overlapping(lookup_thresh_ms=20)
+            data = dataloader.get_overlapping(lookup_thresh_ms=args.time_thresh)
 
             frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"]]
 
