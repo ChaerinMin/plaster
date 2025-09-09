@@ -140,9 +140,9 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[in
             continue
         out_path = os.path.join(image_dir, f"{frame_id}.jpg")
         try:
-            # OpenCV expects BGR for color images; we write as-is since SIFT/pycolmap are robust to channel order.
-            # Ensure directory exists and write with high quality.
-            success = cv2.imwrite(out_path, img, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+            # OpenCV expects BGR input; convert from RGB if needed so the saved file displays with correct RGB colors.
+            bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR) if img.ndim == 3 and img.shape[2] == 3 else img
+            success = cv2.imwrite(out_path, bgr, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
             if not success:
                 raise RuntimeError("cv2.imwrite returned False")
         except Exception as e:
@@ -197,7 +197,7 @@ def calibrate_camera_from_primer(frames: Any,
         final_cam_params["stage3_camera_mode"] = "UNKNOWN"
         final_cam_params["stage3_params"] = None
 
-    # We will follow a 2-stage strategy
+    # We will follow a multi-stage strategy
     # Stage 1 assumes a single camera model for all cameras, extracts distortion parameters and undistorts the images
     # Stage 2 takes the undistorted images and refines the camera parameters using a PINHOLE model
     try:
@@ -252,8 +252,10 @@ def calibrate_camera_from_primer(frames: Any,
                 img = cv2.imread(dist_img_path)
                 print(f'Undistorting with {cam.params.tolist()}')
                 undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=stage1_camera_model)
+                # undist_img is from OpenCV pipeline (BGR); save directly for correct RGB display.
                 cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
                 if VGGT_FOUND:
+                    # undist_img is from OpenCV pipeline (BGR); save directly for correct RGB display.
                     cv2.imwrite(os.path.join(stage3_image_dir, f"{id}.jpg"), undist_img)
 
             break # Since we are assuming only 1 set of distortion parameters for all cameras

@@ -38,7 +38,7 @@ pip install "git+ssh://git@github.com/brown-ivl/primer.git@main"
 pip install "git+ssh://git@github.com/brown-ivl/timetree.git@main"
 
 # Install colmap
-pip install pycolmap
+pip install pycolmap>=3.12.4
 ```
 
 ### OPTIONAL: Use VGGT for spatial calibration
