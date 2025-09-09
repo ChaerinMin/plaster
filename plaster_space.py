@@ -14,6 +14,7 @@ parser.add_argument("-d", "--day", type=str, help="If looking for a specific day
 parser.add_argument("--ms", type=str, help="If looking for a specific multisequence.", required=False, default=None)
 parser.add_argument("--time-thresh", type=float, default=20, help="Time sync threshold in ms.")
 parser.add_argument("-f", "--force-reserialize", action="store_true", help="Force reserialization of the source")
+parser.add_argument("--max-features", type=int, default=15000, help="Maximum number of features to detect per image.")
 parser.add_argument("--run-vggt-stage3", action="store_true", help="Run VGGT Stage 3 calibration if VGGT is available.")
 
 # VGGT COLMAP arguments. Used only if VGGT is available. Taken from https://raw.githubusercontent.com/facebookresearch/vggt/refs/heads/main/demo_colmap.py

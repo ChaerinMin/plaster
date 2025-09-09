@@ -49,8 +49,6 @@ try:
 except ImportError:
     VGGT_FOUND = False
 
-MAX_SIFT_FEATURES=25000
-
 def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
     """Normalize an input array-like into a uint8 numpy array acceptable by OpenCV.
 
@@ -206,7 +204,7 @@ def calibrate_camera_from_primer(frames: Any,
         stage1_recon_output_path = os.path.join(stage1_dir, "sparse")
 
         sift_options = pycolmap.SiftExtractionOptions()
-        sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
+        sift_options.max_num_features = args.max_features # Maximize number of features
 
         print(f"Stage 1 ({stage1_camera_model} and {str(stage1_camera_mode)}) calibration started")
         pycolmap.extract_features(database_path=stage1_database_path, image_path=stage1_image_dir, camera_mode=stage1_camera_mode, camera_model=stage1_camera_model, sift_options=sift_options)
@@ -287,7 +285,7 @@ def calibrate_camera_from_primer(frames: Any,
         stage2_recon_output_path = os.path.join(stage2_dir, "sparse")
 
         sift_options = pycolmap.SiftExtractionOptions()
-        sift_options.max_num_features = MAX_SIFT_FEATURES # Maximize number of features
+        sift_options.max_num_features = args.max_features # Maximize number of features
         # SIMPLE_PINHOLE, PINHOLE: Use these camera models, if your images are undistorted a priori. These use one and two focal length parameters, respectively. Note that even in the case of undistorted images, COLMAP could try to improve the intrinsics with a more complex camera model.
         # OPENCV, FULL_OPENCV: Use these camera models, if you know the calibration parameters a priori. You can also try to let COLMAP estimate the parameters, if you share the intrinsics for multiple images. Note that the automatic estimation of parameters will most likely fail, if every image has a separate set of intrinsic parameters.
         print(f"Stage 2 ({stage2_camera_model} and {str(stage2_camera_mode)}) calibration started")
