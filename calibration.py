@@ -33,7 +33,6 @@ import os
 import shutil
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
-import torch
 import numpy as np
 import pycolmap
 import glob
@@ -53,7 +52,7 @@ except ImportError:
 MAX_SIFT_FEATURES=25000
 
 def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
-    """Normalize an input (torch.Tensor | np.ndarray) into a uint8 array acceptable by PIL.
+    """Normalize an input array-like into a uint8 numpy array acceptable by OpenCV.
 
     Accepts shapes:
       - H x W (grayscale)
@@ -65,8 +64,7 @@ def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
     """
     if img is None:
         return None
-    if isinstance(img, torch.Tensor):
-        img = img.detach().cpu().numpy()
+
     if not isinstance(img, np.ndarray):
         return None
     if img.ndim == 0:
@@ -78,7 +76,6 @@ def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
 
     # CHW -> HWC if needed
     if img.ndim == 3:
-        h, w, c = None, None, None
         # Determine if first dim is channel dimension
         if img.shape[0] in (1, 3, 4) and (img.shape[2] > 4 or img.shape[2] not in (1, 3, 4)):
             # Likely CHW because last dim does not look like channels
@@ -92,8 +89,8 @@ def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
             img = np.transpose(img, (1, 2, 0))
 
     # If we have shape (C,H,W) still (rare fallback)
-    if img.ndim == 3 and img.shape[0] in (1,3,4) and img.shape[-1] not in (1,3,4):
-        img = np.transpose(img, (1,2,0))
+    if img.ndim == 3 and img.shape[0] in (1, 3, 4) and img.shape[-1] not in (1, 3, 4):
+        img = np.transpose(img, (1, 2, 0))
 
     # Squeeze single-channel dimension if grayscale
     if img.ndim == 3 and img.shape[2] == 1:
@@ -116,8 +113,12 @@ def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
         else:
             img = img.astype(np.uint8)
 
+    # Drop alpha for JPEG compatibility when using OpenCV
+    if img.ndim == 3 and img.shape[2] == 4:
+        img = img[:, :, :3]
+
     # Final sanity checks
-    if img.ndim == 3 and img.shape[2] not in (3, 4):
+    if img.ndim == 3 and img.shape[2] not in (3,):
         # Unexpected channel count
         return None
     if img.ndim not in (2, 3):
@@ -126,7 +127,7 @@ def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
 
 
 def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[int, str]]:
-    # Write frames to files. frames are torch tensors or ndarrays in various layouts.
+    # Write frames to files. frames can be tensor-like or ndarrays in various layouts.
     written: List[Tuple[int, str]] = []
     if not os.path.exists(image_dir):
         os.makedirs(image_dir, exist_ok=True)
@@ -139,8 +140,11 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[in
             continue
         out_path = os.path.join(image_dir, f"{frame_id}.jpg")
         try:
-            from PIL import Image  # type: ignore
-            Image.fromarray(img).save(out_path, quality=95)
+            # OpenCV expects BGR for color images; we write as-is since SIFT/pycolmap are robust to channel order.
+            # Ensure directory exists and write with high quality.
+            success = cv2.imwrite(out_path, img, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
+            if not success:
+                raise RuntimeError("cv2.imwrite returned False")
         except Exception as e:
             print(f"Failed to write image {frame_id}: {e} (original shape {getattr(raw_img, 'shape', None)})")
             continue
