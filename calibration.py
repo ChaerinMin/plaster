@@ -344,8 +344,7 @@ def calibrate_camera_from_primer(frames: Any,
         if(args.run_vggt_stage3 and VGGT_FOUND):
             print(f"VGGT Stage 3 ({stage3_camera_model} and {str(stage3_camera_mode)}) calibration started.")
             if args.scene_dir is None:
-                args.scene_dir = stage3_image_dir
-            args.output_dir = stage3_dir
+                args.scene_dir = stage3_dir
             vggt_colmap.demo_fn(args)
 
         return {"success": True,
