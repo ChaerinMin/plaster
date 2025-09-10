@@ -13,7 +13,8 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    _, _, depth_map, depth_conf, conf_mask, points_3d = vggt_colmap.run_vggt_custom(args.input_dir, conf_thres_percent=args.conf_thres_percent)
+    # _, _, depth_map, depth_conf, conf_mask, points_3d = vggt_colmap.run_vggt_custom(args.input_dir, conf_thres_percent=args.conf_thres_percent)
+    _, _, depth_map, depth_conf, conf_mask, points_3d = vggt_colmap.run_model(args.input_dir, conf_thres_percent=args.conf_thres_percent)
     os.makedirs(os.path.join(args.input_dir, "masks"), exist_ok=True)
     print('Depth map shape: ', depth_map.shape)
     for i in range(depth_map.shape[0]):
