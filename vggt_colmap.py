@@ -24,7 +24,7 @@ import pycolmap
 
 
 from vggt.models.vggt import VGGT
-from vggt.utils.load_fn import load_and_preprocess_images_square
+from vggt.utils.load_fn import load_and_preprocess_images_square, load_and_preprocess_images
 from vggt.utils.pose_enc import pose_encoding_to_extri_intri
 from vggt.utils.geometry import unproject_depth_map_to_point_map
 from vggt.utils.helper import create_pixel_coordinate_grid, randomly_limit_trues
@@ -127,6 +127,8 @@ def run_vggt_custom(scene_dir, conf_thres_value=5.0, seed=42):
     vggt_fixed_resolution = 518
     img_load_resolution = 1024
 
+    # images, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
+    # See https://github.com/facebookresearch/vggt/issues/202
     images, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
     images = images.to(device)
     original_coords = original_coords.to(device)
@@ -184,7 +186,9 @@ def demo_fn(args):
     vggt_fixed_resolution = 518
     img_load_resolution = 1024
 
-    images, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
+    # images, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
+    # See https://github.com/facebookresearch/vggt/issues/202
+    images, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)    
     images = images.to(device)
     original_coords = original_coords.to(device)
     print(f"Loaded {len(images)} images from {image_dir}")
