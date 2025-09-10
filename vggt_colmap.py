@@ -89,7 +89,7 @@ def run_VGGT(model, images, dtype, resolution=518):
     depth_conf = depth_conf.squeeze(0).cpu().numpy()
     return extrinsic, intrinsic, depth_map, depth_conf
 
-def run_vggt_custom(scene_dir, conf_thres_value=5.0, seed=1234):
+def run_vggt_custom(scene_dir, conf_thres_value=5.0, seed=42):
     # Set seed for reproducibility
     np.random.seed(seed)
     torch.manual_seed(seed)

@@ -18,5 +18,6 @@ if __name__ == "__main__":
     print('Depth map shape: ', depth_map.shape)
     for i in range(depth_map.shape[0]):
         mask = conf_mask[i].astype(np.uint8) * 255
+        print('Min and Max of mask: ', np.min(mask), np.max(mask))
         # mask = cv2.resize(mask, (best_recon.images[i].width, best_recon.images[i].height), interpolation=cv2.INTER_NEAREST)
         cv2.imwrite(os.path.join(args.input_dir, "masks", f"mask_{i:03d}.png"), mask)
