@@ -89,7 +89,7 @@ def run_VGGT(model, images, dtype, resolution=518):
     depth_conf = depth_conf.squeeze(0).cpu().numpy()
     return extrinsic, intrinsic, depth_map, depth_conf
 
-def run_vggt(scene_dir, seed=1234):
+def run_vggt_custom(scene_dir, conf_thres_value=5.0, seed=1234):
     # Set seed for reproducibility
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -136,8 +136,16 @@ def run_vggt(scene_dir, seed=1234):
     # Run with 518x518 images
     extrinsic, intrinsic, depth_map, depth_conf = run_VGGT(model, images, dtype, vggt_fixed_resolution)
     points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)
+    conf_mask = depth_conf >= conf_thres_value
     
-    return extrinsic, intrinsic, depth_map, depth_conf, points_3d
+    # Reshape depth_map, depth_conf, and conf_mask to match the image shape
+    for i in range(len(images)):
+        im_shape = images[i].shape
+        depth_map[i] = depth_map[i].reshape(im_shape[0], im_shape[1])
+        depth_conf[i] = depth_conf[i].reshape(im_shape[0], im_shape[1])
+        conf_mask[i] = conf_mask[i].reshape(im_shape[0], im_shape[1])
+
+    return extrinsic, intrinsic, depth_map, depth_conf, conf_mask, points_3d
 
 
 def demo_fn(args):

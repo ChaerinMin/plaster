@@ -237,16 +237,17 @@ def calibrate_camera_from_primer(frames: Any,
                 best_recon = recon
 
         stage2_image_dir = os.path.join(stage2_dir, "images")
-        if VGGT_FOUND:
+        os.makedirs(stage2_image_dir, exist_ok=True)
+        if VGGT_FOUND and args.run_vggt_stage3:
             stage3_image_dir = os.path.join(stage3_dir, "images")
-            
+            os.makedirs(stage3_image_dir, exist_ok=True)
+
         final_cam_params["stage1_model"] = str(stage1_camera_model)
         final_cam_params["stage1_camera_mode"] = str(stage1_camera_mode)
         for cam in best_recon.cameras.values():
             final_cam_params["stage1_params"] = cam.params.tolist()
 
             # OpenCV undistort
-            os.makedirs(stage2_image_dir, exist_ok=True)
             for id, dist_img_path in frame_path_list:
                 img = cv2.imread(dist_img_path)
                 print(f'Undistorting with {cam.params.tolist()}')
@@ -333,7 +334,7 @@ def calibrate_camera_from_primer(frames: Any,
         
         # If VGGT is available, let's actually get some masks
         if VGGT_FOUND:
-            _, _, depth_map, depth_conf, points_3d = vggt_colmap.run_vggt(stage2_dir)
+            _, _, depth_map, depth_conf, conf_mask, points_3d = vggt_colmap.run_vggt_custom(stage2_dir, conf_thres_value=args.conf_thres_value)
             print(f"VGGT depth map shape: {depth_map.shape}, Depth conf shape: {depth_conf.shape}, Points 3D shape: {points_3d.shape}")
             
     except Exception as e:
