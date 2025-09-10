@@ -137,6 +137,7 @@ def run_vggt_custom(scene_dir, conf_thres_value=5.0, seed=42):
     extrinsic, intrinsic, depth_map, depth_conf = run_VGGT(model, images, dtype, vggt_fixed_resolution)
     points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)
     print('Threshold with value: ', conf_thres_value)
+    print('Min and Max of depth conf: ', np.min(depth_conf), np.max(depth_conf))
     conf_mask = depth_conf >= conf_thres_value
     
     return extrinsic, intrinsic, depth_map, depth_conf, conf_mask, points_3d
