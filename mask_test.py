@@ -36,3 +36,13 @@ if __name__ == "__main__":
         mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_CUBIC)
         basename = os.path.basename(image_names[i])
         cv2.imwrite(os.path.join(args.input_dir, "masks", basename), mask)
+        
+    os.makedirs(os.path.join(args.input_dir, "images_masked"), exist_ok=True)
+    for i in range(predictions['depth'].shape[0]):
+        mask = conf_mask[i].astype(np.uint8) * 255
+        mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_CUBIC)
+        image = cv2.imread(image_names[i])
+        image = cv2.bitwise_and(image, image, mask=mask)
+        basename = os.path.basename(image_names[i])
+        cv2.imwrite(os.path.join(args.input_dir, "images_masked", basename), image)
+    print(f"Masks and masked images saved in {os.path.join(args.input_dir, 'masks')} and {os.path.join(args.input_dir, 'images_masked')}")
