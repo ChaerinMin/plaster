@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
             print(f"Processing multisequence: {ms['name']}")
             dataloader = primer.Primer(args.source, day, ms["name"])
-            data = dataloader.get_overlapping(lookup_thresh_ms=args.time_thresh)
+            data = dataloader.get_overlapping(lookup_thresh_ms=args.time_thresh, wb_temp=4500, is_harmonize=True)
 
             frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"]]
 
