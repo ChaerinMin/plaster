@@ -144,7 +144,6 @@ def run_vggt_custom(scene_dir, conf_thres_percent=65.0, seed=42):
     print('Min and Max of depth conf: ', min_conf, max_conf)
     conf_thres_value = min_conf + (max_conf - min_conf) * (conf_thres_percent / 100.0)
     print('Threshold with value: ', conf_thres_value)
-    print('Min and Max of depth conf: ', np.min(depth_conf), np.max(depth_conf))
     conf_mask = depth_conf >= conf_thres_value
     
     return extrinsic, intrinsic, depth_map, depth_conf, conf_mask, points_3d
