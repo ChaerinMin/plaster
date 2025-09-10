@@ -138,13 +138,6 @@ def run_vggt_custom(scene_dir, conf_thres_value=5.0, seed=1234):
     points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)
     conf_mask = depth_conf >= conf_thres_value
     
-    # Reshape depth_map, depth_conf, and conf_mask to match the image shape
-    for i in range(len(images)):
-        im_shape = images[i].shape
-        depth_map[i] = depth_map[i].reshape(im_shape[0], im_shape[1])
-        depth_conf[i] = depth_conf[i].reshape(im_shape[0], im_shape[1])
-        conf_mask[i] = conf_mask[i].reshape(im_shape[0], im_shape[1])
-
     return extrinsic, intrinsic, depth_map, depth_conf, conf_mask, points_3d
 
 
