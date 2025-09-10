@@ -335,6 +335,11 @@ def calibrate_camera_from_primer(frames: Any,
         # If VGGT is available, let's actually get some masks
         if VGGT_FOUND:
             _, _, depth_map, depth_conf, conf_mask, points_3d = vggt_colmap.run_vggt_custom(stage2_dir, conf_thres_value=args.conf_thres_value)
+            os.makedirs(os.path.join(stage2_dir, "masks"), exist_ok=True)
+            for i in range(len(depth_map.shape[0])):
+                mask = conf_mask[i].cpu().numpy().astype(np.uint8) * 255
+                cv2.imwrite(os.path.join(stage2_dir, "masks", f"mask_{i:03d}.png"), mask)
+                
             print(f"VGGT depth map shape: {depth_map.shape}, Depth conf shape: {depth_conf.shape}, Points 3D shape: {points_3d.shape}")
             
     except Exception as e:
