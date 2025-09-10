@@ -172,7 +172,7 @@ def run_model(target_dir, seed=42, conf_thres_percent=65.0) -> dict:
         threshold_val = np.percentile(predictions['depth'], conf_thres_percent)
         print('Threshold with value: ', threshold_val)
         print('Min and Max of depth: ', np.min(predictions['depth']), np.max(predictions['depth']))
-        conf_mask = predictions['depth'] >= threshold_val
+        conf_mask = predictions['depth'] < threshold_val
 
     return predictions['extrinsic'], predictions['intrinsic'], predictions['depth'], predictions['depth_conf'], conf_mask, predictions['world_points_from_depth'], image_names
 
