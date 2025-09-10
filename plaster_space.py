@@ -20,7 +20,7 @@ parser.add_argument("--run-vggt-stage3", action="store_true", help="Run VGGT Sta
 
 # VGGT COLMAP arguments. Used only if VGGT is available. Taken from https://raw.githubusercontent.com/facebookresearch/vggt/refs/heads/main/demo_colmap.py
 vg_group = parser.add_argument_group("VGGT COLMAP")
-vg_group.add_argument("--scene_dir", type=str, required=False, help="Directory containing the scene images")
+vg_group.add_argument("--scene_dir", type=str, required=False, help="Directory containing the scene images", default=None)
 vg_group.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
 vg_group.add_argument("--use_ba", action="store_true", default=False, help="Use BA for reconstruction")
 ######### BA parameters #########

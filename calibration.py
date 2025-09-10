@@ -253,7 +253,7 @@ def calibrate_camera_from_primer(frames: Any,
                 undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=stage1_camera_model)
                 # undist_img is from OpenCV pipeline (BGR); save directly for correct RGB display.
                 cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
-                if VGGT_FOUND:
+                if VGGT_FOUND and args.run_vggt_stage3:
                     # undist_img is from OpenCV pipeline (BGR); save directly for correct RGB display.
                     cv2.imwrite(os.path.join(stage3_image_dir, f"{id}.jpg"), undist_img)
 
@@ -337,6 +337,9 @@ def calibrate_camera_from_primer(frames: Any,
     try:
         if(args.run_vggt_stage3 and VGGT_FOUND):
             print(f"VGGT Stage 3 ({stage3_camera_model} and {str(stage3_camera_mode)}) calibration started.")
+            if args.scene_dir is None:
+                args.scene_dir = stage3_image_dir
+            args.output_dir = stage3_dir
             vggt_colmap.demo_fn(args)
 
         return {"success": True,
