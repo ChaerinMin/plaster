@@ -336,7 +336,7 @@ def calibrate_camera_from_primer(frames: Any,
         if VGGT_FOUND:
             _, _, depth_map, depth_conf, conf_mask, points_3d = vggt_colmap.run_vggt_custom(stage2_dir, conf_thres_value=args.conf_thres_value)
             os.makedirs(os.path.join(stage2_dir, "masks"), exist_ok=True)
-            for i in range(len(depth_map.shape[0])):
+            for i in range(depth_map.shape[0]):
                 mask = conf_mask[i].cpu().numpy().astype(np.uint8) * 255
                 mask = cv2.resize(mask, (best_recon.images[i].width, best_recon.images[i].height), interpolation=cv2.INTER_NEAREST)
                 cv2.imwrite(os.path.join(stage2_dir, "masks", f"mask_{i:03d}.png"), mask)
