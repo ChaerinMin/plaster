@@ -330,6 +330,12 @@ def calibrate_camera_from_primer(frames: Any,
             f.write(json.dumps(final_cam_params, indent=4))
 
         print(f"Stage 2 ({stage2_camera_model} and {str(stage2_camera_mode)}) calibration completed with {best_recon.num_frames()} images for the best reconstruction.")
+        
+        # If VGGT is available, let's actually get some masks
+        if VGGT_FOUND:
+            _, _, depth_map, depth_conf, points_3d = vggt_colmap.run_vggt(stage2_dir)
+            print(f"VGGT depth map shape: {depth_map.shape}, Depth conf shape: {depth_conf.shape}, Points 3D shape: {points_3d.shape}")
+            
     except Exception as e:
         print(f"Stage 2 ({stage2_camera_model} and {str(stage2_camera_mode)}) calibration failed: {e}. Not proceeding to Stage 3. Exiting.")
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}

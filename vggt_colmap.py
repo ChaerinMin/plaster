@@ -89,6 +89,56 @@ def run_VGGT(model, images, dtype, resolution=518):
     depth_conf = depth_conf.squeeze(0).cpu().numpy()
     return extrinsic, intrinsic, depth_map, depth_conf
 
+def run_vggt(scene_dir, seed=1234):
+    # Set seed for reproducibility
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    random.seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)  # for multi-GPU
+    print(f"Setting seed as: {seed}")
+
+    # Set device and dtype
+    dtype = torch.bfloat16 if torch.cuda.get_device_capability()[0] >= 8 else torch.float16
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Using device: {device}")
+    print(f"Using dtype: {dtype}")
+
+    # Run VGGT for camera and depth estimation
+    model = VGGT()
+    _URL = "https://huggingface.co/facebook/VGGT-1B/resolve/main/model.pt"
+    # # VGGT Commercial
+    # _URL = "https://huggingface.co/facebook/VGGT-1B-Commercial/blob/main/vggt_1B_commercial.pt"
+    model.load_state_dict(torch.hub.load_state_dict_from_url(_URL))
+    model.eval()
+    model = model.to(device)
+    print(f"VGGT model loaded")
+
+    # Get image paths and preprocess them
+    image_dir = os.path.join(scene_dir, "images")
+    image_path_list = glob.glob(os.path.join(image_dir, "*"))
+    if len(image_path_list) == 0:
+        raise ValueError(f"No images found in {image_dir}")
+    base_image_path_list = [os.path.basename(path) for path in image_path_list]
+
+    # Load images and original coordinates
+    # Load Image in 1024, while running VGGT with 518
+    vggt_fixed_resolution = 518
+    img_load_resolution = 1024
+
+    images, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
+    images = images.to(device)
+    original_coords = original_coords.to(device)
+    print(f"Loaded {len(images)} images from {image_dir}")
+
+    # Run VGGT to estimate camera and depth
+    # Run with 518x518 images
+    extrinsic, intrinsic, depth_map, depth_conf = run_VGGT(model, images, dtype, vggt_fixed_resolution)
+    points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)
+    
+    return extrinsic, intrinsic, depth_map, depth_conf, points_3d
+
 
 def demo_fn(args):
     # Print configuration
