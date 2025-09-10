@@ -46,6 +46,7 @@ try:
     import vggt
     import vggt_colmap
     VGGT_FOUND = True
+    print("VGGT module found. Stage 3 calibration is available.")
 except ImportError:
     VGGT_FOUND = False
 
@@ -334,8 +335,8 @@ def calibrate_camera_from_primer(frames: Any,
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
         
     try:
-        print(f"VGGT Stage 3 ({stage3_camera_model} and {str(stage3_camera_mode)}) calibration started.")
         if(args.run_vggt_stage3 and VGGT_FOUND):
+            print(f"VGGT Stage 3 ({stage3_camera_model} and {str(stage3_camera_mode)}) calibration started.")
             vggt_colmap.demo_fn(args)
 
         return {"success": True,
