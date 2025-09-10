@@ -9,7 +9,7 @@ import vggt_colmap
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Mask Generation Test Script")
     parser.add_argument("--input-dir", type=str, required=True, help="Path to the source directory containing plaster.json")
-    parser.add_argument("--conf-thres-percent", type=float, default=60.0, help="Confidence threshold value for depth filtering in percent.")
+    parser.add_argument("--conf-thres-percent", type=float, default=50.0, help="Confidence threshold value for depth filtering in percent.")
     
     args = parser.parse_args()
     
