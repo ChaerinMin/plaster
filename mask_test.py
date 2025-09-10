@@ -14,11 +14,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # _, _, depth_map, depth_conf, conf_mask, points_3d = vggt_colmap.run_vggt_custom(args.input_dir, conf_thres_percent=args.conf_thres_percent)
-    _, _, depth_map, depth_conf, conf_mask, points_3d = vggt_colmap.run_model(args.input_dir, conf_thres_percent=args.conf_thres_percent)
+    _, _, depth_map, depth_conf, conf_mask, points_3d, image_names = vggt_colmap.run_model(args.input_dir, conf_thres_percent=args.conf_thres_percent)
     os.makedirs(os.path.join(args.input_dir, "masks"), exist_ok=True)
     print('Depth map shape: ', depth_map.shape)
+    image_shape = cv2.imread(image_names[0]).shape
+    print('Image shape: ', image_shape)
     for i in range(depth_map.shape[0]):
         mask = conf_mask[i].astype(np.uint8) * 255
         print('Min and Max of mask: ', np.min(mask), np.max(mask))
-        # mask = cv2.resize(mask, (best_recon.images[i].width, best_recon.images[i].height), interpolation=cv2.INTER_NEAREST)
-        cv2.imwrite(os.path.join(args.input_dir, "masks", f"mask_{i:03d}.png"), mask)
+        mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_CUBIC)
+        basename = os.path.basename(image_names[i])
+        cv2.imwrite(os.path.join(args.input_dir, "masks", basename), mask)

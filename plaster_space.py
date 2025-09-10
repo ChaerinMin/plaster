@@ -17,6 +17,7 @@ parser.add_argument("-f", "--force-reserialize", action="store_true", help="Forc
 parser.add_argument("--max-features", type=int, default=15000, help="Maximum number of features to detect per image.")
 parser.add_argument("--min-num-matches", type=int, default=15, help="Minimum number of matches required to consider a reconstruction valid.")
 parser.add_argument("--run-vggt-stage3", action="store_true", help="Run VGGT Stage 3 calibration if VGGT is available.")
+parser.add_argument("--conf-thres-percent", type=float, default=60.0, help="Confidence threshold value for depth filtering in percent.")
 
 # VGGT COLMAP arguments. Used only if VGGT is available. Taken from https://raw.githubusercontent.com/facebookresearch/vggt/refs/heads/main/demo_colmap.py
 vg_group = parser.add_argument_group("VGGT COLMAP")

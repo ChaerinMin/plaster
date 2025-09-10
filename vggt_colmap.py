@@ -169,7 +169,7 @@ def run_model(target_dir, seed=42, conf_thres_percent=60.0) -> dict:
         print('Min and Max of depth conf: ', np.min(predictions['depth_conf']), np.max(predictions['depth_conf']))
         conf_mask = predictions['depth_conf'] >= threshold_val
 
-    return predictions['extrinsic'], predictions['intrinsic'], predictions['depth'], predictions['depth_conf'], conf_mask, predictions['world_points_from_depth']
+    return predictions['extrinsic'], predictions['intrinsic'], predictions['depth'], predictions['depth_conf'], conf_mask, predictions['world_points_from_depth'], image_names
 
 def run_vggt_custom(scene_dir, conf_thres_percent=65.0, seed=42):
     # Set seed for reproducibility
