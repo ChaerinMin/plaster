@@ -334,13 +334,15 @@ def calibrate_camera_from_primer(frames: Any,
         
         # If VGGT is available, let's actually get some masks
         if VGGT_FOUND:
-            _, _, depth_map, depth_conf, conf_mask, points_3d = vggt_colmap.run_vggt_custom(stage2_dir, conf_thres_percent=args.conf_thres_percent)
+            _, _, depth_map, depth_conf, conf_mask, points_3d, images_path = vggt_colmap.run_model(stage2_dir, conf_thres_percent=args.conf_thres_percent)
+            image_shape = cv2.imread(images_path[0]).shape
             os.makedirs(os.path.join(stage2_dir, "masks"), exist_ok=True)
             # print('Depth map shape: ', depth_map.shape)
             for i in range(depth_map.shape[0]):
                 mask = conf_mask[i].astype(np.uint8) * 255
-                # mask = cv2.resize(mask, (best_recon.images[i].width, best_recon.images[i].height), interpolation=cv2.INTER_NEAREST)
-                cv2.imwrite(os.path.join(stage2_dir, "masks", f"mask_{i:03d}.png"), mask)
+                mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_CUBIC)
+                basename = os.path.basename(images_path[i])
+                cv2.imwrite(os.path.join(stage2_dir, "masks", basename), mask)
                 
             print(f"VGGT depth map shape: {depth_map.shape}, Depth conf shape: {depth_conf.shape}, Points 3D shape: {points_3d.shape}")
             
