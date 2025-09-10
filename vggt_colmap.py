@@ -127,9 +127,9 @@ def run_vggt_custom(scene_dir, conf_thres_value=5.0, seed=42):
     vggt_fixed_resolution = 518
     img_load_resolution = 1024
 
-    # images, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
+    images_old, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
     # See https://github.com/facebookresearch/vggt/issues/202
-    images, original_coords = load_and_preprocess_images(image_path_list, img_load_resolution)
+    images = load_and_preprocess_images(image_path_list)
     images = images.to(device)
     original_coords = original_coords.to(device)
     print(f"Loaded {len(images)} images from {image_dir}")
@@ -186,9 +186,9 @@ def demo_fn(args):
     vggt_fixed_resolution = 518
     img_load_resolution = 1024
 
-    # images, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
+    images_old, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
     # See https://github.com/facebookresearch/vggt/issues/202
-    images, original_coords = load_and_preprocess_images(image_path_list, img_load_resolution)    
+    images = load_and_preprocess_images(image_path_list)    
     images = images.to(device)
     original_coords = original_coords.to(device)
     print(f"Loaded {len(images)} images from {image_dir}")
