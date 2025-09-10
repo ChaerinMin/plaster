@@ -96,7 +96,7 @@ def run_model(target_dir, seed=42, conf_thres_percent=60.0) -> dict:
     """
     Run the VGGT model on images in the 'target_dir/images' folder and return predictions.
     """
-        # Set seed for reproducibility
+    # Set seed for reproducibility
     np.random.seed(seed)
     torch.manual_seed(seed)
     random.seed(seed)
@@ -122,7 +122,6 @@ def run_model(target_dir, seed=42, conf_thres_percent=60.0) -> dict:
     print(f"VGGT model loaded")
     
     print(f"Processing images from {target_dir}")
-
     # Load and preprocess images
     image_names = glob.glob(os.path.join(target_dir, "images", "*"))
     image_names = sorted(image_names)
@@ -167,6 +166,7 @@ def run_model(target_dir, seed=42, conf_thres_percent=60.0) -> dict:
     if 'depth_conf' in predictions:
         threshold_val = np.percentile(predictions['depth_conf'], conf_thres_percent)
         print('Threshold with value: ', threshold_val)
+        print('Min and Max of depth conf: ', np.min(predictions['depth_conf']), np.max(predictions['depth_conf']))
         conf_mask = predictions['depth_conf'] >= threshold_val
 
     return predictions['extrinsic'], predictions['intrinsic'], predictions['depth'], predictions['depth_conf'], conf_mask, predictions['world_points_from_depth']
