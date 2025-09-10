@@ -89,7 +89,7 @@ def run_VGGT(model, images, dtype, resolution=518):
     depth_conf = depth_conf.squeeze(0).cpu().numpy()
     return extrinsic, intrinsic, depth_map, depth_conf
 
-def run_vggt_custom(scene_dir, conf_thres_value=5.0, seed=42):
+def run_vggt_custom(scene_dir, conf_thres_percent=65.0, seed=42):
     # Set seed for reproducibility
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -138,6 +138,11 @@ def run_vggt_custom(scene_dir, conf_thres_value=5.0, seed=42):
     # Run with 518x518 images
     extrinsic, intrinsic, depth_map, depth_conf = run_VGGT(model, images, dtype, vggt_fixed_resolution)
     points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)
+    # Get min/max of depth_conf to set threshold. TODO: Make this percentile based
+    min_conf = np.min(depth_conf)
+    max_conf = np.max(depth_conf)
+    print('Min and Max of depth conf: ', min_conf, max_conf)
+    conf_thres_value = min_conf + (max_conf - min_conf) * (conf_thres_percent / 100.0)
     print('Threshold with value: ', conf_thres_value)
     print('Min and Max of depth conf: ', np.min(depth_conf), np.max(depth_conf))
     conf_mask = depth_conf >= conf_thres_value
@@ -188,7 +193,7 @@ def demo_fn(args):
 
     images_old, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
     # See https://github.com/facebookresearch/vggt/issues/202
-    images = load_and_preprocess_images(image_path_list)    
+    images = load_and_preprocess_images(image_path_list)
     images = images.to(device)
     original_coords = original_coords.to(device)
     print(f"Loaded {len(images)} images from {image_dir}")
