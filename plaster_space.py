@@ -78,16 +78,20 @@ if __name__ == "__main__":
                 print(f"Calibration directory already exists: {calib_dir}. Skipping calibration for this multisequence.")
                 continue
 
-            print(f"Processing multisequence: {ms['name']}")
-            dataloader = primer.Primer(args.source, day, ms["name"])
-            data = dataloader.get_overlapping(lookup_thresh_ms=args.time_thresh, wb_temp=4500, is_harmonize=True)
+            try:
+                print(f"Processing multisequence: {ms['name']}")
+                dataloader = primer.Primer(args.source, day, ms["name"])
+                data = dataloader.get_overlapping(lookup_thresh_ms=args.time_thresh, wb_temp=4500, is_harmonize=True)
 
-            frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"]]
+                frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"]]
 
-            calib_res = calibrate_camera_from_primer(
-                frames=frame_data,
-                output_dir=calib_dir,
-                clear_previous=double_force_reserialize,
-                args=args,
-            )
-            print(f"Calibration: {calib_res}")
+                calib_res = calibrate_camera_from_primer(
+                    frames=frame_data,
+                    output_dir=calib_dir,
+                    clear_previous=double_force_reserialize,
+                    args=args,
+                )
+                print(f"Calibration: {calib_res}")
+            except Exception as e:
+                print(f"Error processing multisequence {ms['name']}: {e}")
+                continue
