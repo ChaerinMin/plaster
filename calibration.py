@@ -179,7 +179,7 @@ def calibrate_camera_from_primer(frames: Any,
     os.makedirs(stage2_dir, exist_ok=True)
     if VGGT_FOUND:
         os.makedirs(stage3_dir, exist_ok=True)
-    pycolmap.set_log_destination(os.path.join(output_dir, "calib.log"))
+    # pycolmap.set_log_destination(os.path.join(output_dir, "calib.log"))
 
     frame_path_list = _write_images(frames, os.path.join(stage1_dir, "images"))
     if len(frame_path_list) < min_images:
