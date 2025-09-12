@@ -84,7 +84,11 @@ if __name__ == "__main__":
                 dataloader = primer.Primer(args.source, day, ms["name"])
                 data = dataloader.get_overlapping(lookup_thresh_ms=args.time_thresh, wb_temp=args.wb_temp, is_harmonize=True)
 
-                frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"]]
+                frame_data = [
+                    {"id": m["name"], "image": m["frame"]}
+                    for m in data["members"]
+                    if m.get("frame") is not None
+                ]
 
                 calib_res = calibrate_camera_from_primer(
                     frames=frame_data,
