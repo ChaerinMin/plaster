@@ -9,6 +9,7 @@ from datetime import datetime
 from calibration import calibrate_camera_from_primer
 import traceback
 import sys
+import pycolmap
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
 parser.add_argument("-s", "--source", type=str, help="Path to the source directory", required=True)
@@ -20,7 +21,7 @@ parser.add_argument("--max-features", type=int, default=15000, help="Maximum num
 parser.add_argument("--min-num-matches", type=int, default=15, help="Minimum number of matches required to consider a reconstruction valid.")
 parser.add_argument("--run-vggt-stage3", action="store_true", help="Run VGGT Stage 3 calibration if VGGT is available.")
 parser.add_argument("--conf-thres-percent", type=float, default=50.0, help="Confidence threshold value for depth filtering in percent.")
-parser.add_argument("--wb-temp", type=int, default=4300, help="White balance temperature for image harmonization.")
+parser.add_argument("--wb-temp", type=int, default=4600, help="White balance temperature for image harmonization.")
 
 # VGGT COLMAP arguments. Used only if VGGT is available. Taken from https://raw.githubusercontent.com/facebookresearch/vggt/refs/heads/main/demo_colmap.py
 vg_group = parser.add_argument_group("VGGT COLMAP")
@@ -97,6 +98,13 @@ if __name__ == "__main__":
                     output_dir=calib_dir,
                     clear_previous=double_force_reserialize,
                     args=args,
+                    stage1_camera_model = "OPENCV",
+                    stage1_camera_mode = pycolmap.CameraMode.PER_IMAGE,
+                    stage2_camera_mode = "PINHOLE",
+                    stage2_camera_mode = pycolmap.CameraMode.PER_IMAGE,
+                    stage3_camera_model = "PINHOLE",
+                    stage3_camera_mode = pycolmap.CameraMode.SINGLE,
+                    
                 )
                 print(f"Calibration: {calib_res}")
             except Exception as e:
