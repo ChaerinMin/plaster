@@ -99,7 +99,7 @@ if __name__ == "__main__":
                     clear_previous=double_force_reserialize,
                     args=args,
                     stage1_camera_model = "OPENCV",
-                    stage1_camera_mode = pycolmap.CameraMode.PER_IMAGE,
+                    stage1_camera_mode = pycolmap.CameraMode.SINGLE,
                     stage2_camera_model = "PINHOLE",
                     stage2_camera_mode = pycolmap.CameraMode.SINGLE,
                     stage3_camera_model = "PINHOLE",
