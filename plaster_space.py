@@ -7,6 +7,8 @@ import primer
 import shutil
 from datetime import datetime
 from calibration import calibrate_camera_from_primer
+import traceback
+import sys
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
 parser.add_argument("-s", "--source", type=str, help="Path to the source directory", required=True)
@@ -98,5 +100,19 @@ if __name__ == "__main__":
                 )
                 print(f"Calibration: {calib_res}")
             except Exception as e:
-                print(f"Error processing multisequence {ms['name']}: {e}")
+                # Verbose logging with traceback and line numbers
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                tb_list = traceback.extract_tb(exc_tb)
+                formatted_tb = ''.join(traceback.format_list(tb_list))
+                final_frame = tb_list[-1] if tb_list else None
+                if final_frame:
+                    print(
+                        f"Error processing multisequence '{ms.get('name','UNKNOWN')}': {exc_type.__name__}: {e}\n"
+                        f"  At {final_frame.filename}:{final_frame.lineno} in {final_frame.name}\n"
+                        f"  Code: {final_frame.line}"
+                    )
+                else:
+                    print(f"Error processing multisequence '{ms.get('name','UNKNOWN')}': {exc_type.__name__}: {e}")
+                print("Full traceback (most recent call last):")
+                print(formatted_tb.rstrip())
                 continue
