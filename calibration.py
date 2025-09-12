@@ -49,6 +49,7 @@ try:
     print("VGGT module found. Stage 3 calibration is available.")
 except ImportError:
     VGGT_FOUND = False
+    print("VGGT module not found. Stage 3 calibration is unavailable.")
 
 def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
     """Normalize an input array-like into a uint8 numpy array acceptable by OpenCV.
