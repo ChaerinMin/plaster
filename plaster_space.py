@@ -18,6 +18,7 @@ parser.add_argument("--max-features", type=int, default=15000, help="Maximum num
 parser.add_argument("--min-num-matches", type=int, default=15, help="Minimum number of matches required to consider a reconstruction valid.")
 parser.add_argument("--run-vggt-stage3", action="store_true", help="Run VGGT Stage 3 calibration if VGGT is available.")
 parser.add_argument("--conf-thres-percent", type=float, default=50.0, help="Confidence threshold value for depth filtering in percent.")
+parser.add_argument("--wb-temp", type=int, default=4300, help="White balance temperature for image harmonization.")
 
 # VGGT COLMAP arguments. Used only if VGGT is available. Taken from https://raw.githubusercontent.com/facebookresearch/vggt/refs/heads/main/demo_colmap.py
 vg_group = parser.add_argument_group("VGGT COLMAP")
@@ -81,7 +82,7 @@ if __name__ == "__main__":
             try:
                 print(f"Processing multisequence: {ms['name']}")
                 dataloader = primer.Primer(args.source, day, ms["name"])
-                data = dataloader.get_overlapping(lookup_thresh_ms=args.time_thresh, wb_temp=4500, is_harmonize=True)
+                data = dataloader.get_overlapping(lookup_thresh_ms=args.time_thresh, wb_temp=args.wb_temp, is_harmonize=True)
 
                 frame_data = [{"id": m["name"], "image": m["frame"]} for m in data["members"]]
 
