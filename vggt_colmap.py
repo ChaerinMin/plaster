@@ -225,7 +225,7 @@ def run_vggt_calibration(args):
                 keypoint_extractor="aliked+sp",
                 fine_tracking=args.fine_tracking,
             )
-
+            
             torch.cuda.empty_cache()
             
         # rescale the intrinsic matrix from 518 to 1024

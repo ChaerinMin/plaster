@@ -32,7 +32,7 @@ vg_group.add_argument(
 vg_group.add_argument("--shared_camera", action="store_true", default=False, help="Use shared camera for all images")
 vg_group.add_argument("--camera_type", type=str, default="SIMPLE_PINHOLE", help="Camera type for reconstruction")
 vg_group.add_argument("--vis_thresh", type=float, default=0.2, help="Visibility threshold for tracks")
-vg_group.add_argument("--query_frame_num", type=int, default=8, help="Number of frames to query")
+vg_group.add_argument("--query_frame_num", type=int, default=2, help="Number of frames to query")
 vg_group.add_argument("--max_query_pts", type=int, default=4096, help="Maximum number of query points")
 vg_group.add_argument(
     "--fine_tracking", action="store_true", default=True, help="Use fine tracking (slower but more accurate)"
