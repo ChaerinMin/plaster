@@ -174,11 +174,11 @@ def run_vggt_calibration(args):
     # images_old, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
     # images = load_and_preprocess_images(image_path_list).to(device)
     images, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
+    # hard-coded to use 518 for VGGT
+    images = F.interpolate(images, size=(vggt_fixed_resolution, vggt_fixed_resolution), mode="bilinear", align_corners=False)
     images = images.to(device)
     original_coords = original_coords.to(device)
     print(f"Loaded {len(images)} images from {image_dir}")
-    # hard-coded to use 518 for VGGT
-    images = F.interpolate(images, size=(vggt_fixed_resolution, vggt_fixed_resolution), mode="bilinear", align_corners=False)
 
     # Run inference
     print("Running inference...")
