@@ -165,9 +165,16 @@ def run_vggt_calibration(args):
     if len(image_path_list) == 0:
         raise ValueError(f"No images found in {image_dir}")
     base_image_path_list = [os.path.basename(path) for path in image_path_list]
+    
+    # Load images and original coordinates
+    # Load Image in 1024, while running VGGT with 518
+    vggt_fixed_resolution = 518
+    img_load_resolution = 1024
 
+    images_old, original_coords = load_and_preprocess_images_square(image_path_list, img_load_resolution)
     images = load_and_preprocess_images(image_path_list).to(device)
-    print(f"Preprocessed images shape: {images.shape}")
+    original_coords = original_coords.to(device)
+    print(f"Loaded {len(images)} images from {image_dir}")
 
     # Run inference
     print("Running inference...")
@@ -189,6 +196,7 @@ def run_vggt_calibration(args):
 
     if args.use_ba:
         image_size = np.array(images.shape[-2:])
+        scale = img_load_resolution / vggt_fixed_resolution
         shared_camera = args.shared_camera
 
         with torch.cuda.amp.autocast(dtype=dtype):
@@ -211,7 +219,9 @@ def run_vggt_calibration(args):
             )
 
             torch.cuda.empty_cache()
-
+            
+        # rescale the intrinsic matrix from 518 to 1024
+        intrinsic[:, :2, :] *= scale
         track_mask = pred_vis_scores > args.vis_thresh
 
         # TODO: radial distortion, iterative BA, masks
@@ -235,8 +245,7 @@ def run_vggt_calibration(args):
         ba_options = pycolmap.BundleAdjustmentOptions()
         pycolmap.bundle_adjustment(reconstruction, ba_options)
 
-        # reconstruction_resolution = img_load_resolution
-        reconstruction_resolution = max(images.shape[-2:])
+        reconstruction_resolution = img_load_resolution
     else:
         print('NOT YET SUPPORTED WITHOUT BA')
         # conf_thres_value = args.conf_thres_value
@@ -278,10 +287,19 @@ def run_vggt_calibration(args):
 
         # reconstruction_resolution = vggt_fixed_resolution
 
-    reconstruction = rename_colmap_recons(
+    reconstruction = rename_colmap_recons_and_rescale_camera(
         reconstruction,
-        base_image_path_list
+        base_image_path_list,
+        original_coords.cpu().numpy(),
+        img_size=reconstruction_resolution,
+        shift_point2d_to_original_res=True,
+        shared_camera=shared_camera,
     )   
+
+    # reconstruction = rename_colmap_recons(
+    #     reconstruction,
+    #     base_image_path_list
+    # )   
 
     print(f"Saving reconstruction to {args.scene_dir}/sparse")
     sparse_reconstruction_dir = os.path.join(args.scene_dir, "sparse")
