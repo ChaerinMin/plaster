@@ -384,11 +384,12 @@ def calibrate_camera_vggt_from_primer(frames: Any,
     if len(frames) < min_images:
         return {"success": False, "message": f"Need >= {min_images} frames", "output_dir": output_dir}
     
-    if clear_previous and os.path.isdir(output_dir):
-        print(f"Clearing previous output directory: {output_dir}")
-        shutil.rmtree(output_dir, ignore_errors=True)
-
     stage3_dir = os.path.join(output_dir, "stage3")
+
+    if clear_previous and os.path.isdir(stage3_dir):
+        print(f"Clearing previous output directory: {stage3_dir}")
+        shutil.rmtree(stage3_dir, ignore_errors=True)
+
     os.makedirs(stage3_dir, exist_ok=True)
     
     frame_path_list = _write_images(frames, os.path.join(stage3_dir, "images"))

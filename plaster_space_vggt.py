@@ -71,12 +71,13 @@ if __name__ == "__main__":
             if args.ms and ms["name"] != args.ms:
                 continue
             calib_dir = os.path.join(args.source, day, ms["name"], "calib")
-            if os.path.exists(calib_dir) and double_force_reserialize:
-                print(f"Removing existing calibration directory: {calib_dir}")
-                shutil.rmtree(calib_dir)
-                
-            if os.path.exists(calib_dir) and not double_force_reserialize:
-                print(f"Calibration directory already exists: {calib_dir}. Skipping calibration for this multisequence.")
+            calib_dir_vggt = os.path.join(args.source, day, ms["name"], "calib/stage3")
+            if os.path.exists(calib_dir_vggt) and double_force_reserialize:
+                print(f"Removing existing calibration directory: {calib_dir_vggt}")
+                shutil.rmtree(calib_dir_vggt)
+
+            if os.path.exists(calib_dir_vggt) and not double_force_reserialize:
+                print(f"Calibration directory already exists: {calib_dir_vggt}. Skipping calibration for this multisequence.")
                 continue
 
             try:
