@@ -166,7 +166,7 @@ def run_vggt_calibration(args):
         raise ValueError(f"No images found in {image_dir}")
     base_image_path_list = [os.path.basename(path) for path in image_path_list]
 
-    images = load_and_preprocess_images(base_image_path_list).to(device)
+    images = load_and_preprocess_images(image_path_list).to(device)
     print(f"Preprocessed images shape: {images.shape}")
 
     # Run inference
@@ -295,7 +295,6 @@ def run_vggt_calibration(args):
 
 def rename_colmap_recons(
     reconstruction, image_paths):
-    rescale_camera = True
 
     for pyimageid in reconstruction.images:
         # Reshaped the padded&resized image to the original size
