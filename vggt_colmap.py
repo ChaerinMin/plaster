@@ -177,6 +177,8 @@ def run_vggt_calibration(args):
     images = images.to(device)
     original_coords = original_coords.to(device)
     print(f"Loaded {len(images)} images from {image_dir}")
+    # hard-coded to use 518 for VGGT
+    images = F.interpolate(images, size=(vggt_fixed_resolution, vggt_fixed_resolution), mode="bilinear", align_corners=False)
 
     # Run inference
     print("Running inference...")
