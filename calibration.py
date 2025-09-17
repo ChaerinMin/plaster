@@ -49,7 +49,7 @@ try:
     print("VGGT module found. Stage 3 calibration is available.")
 except ImportError:
     VGGT_FOUND = False
-    print("VGGT module not found. Stage 3 calibration is unavailable.")
+    print("VGGT module not found. Stage 3 calibration is NOT available.")
 
 def _prepare_image_array(img: Any) -> Optional[np.ndarray]:
     """Normalize an input array-like into a uint8 numpy array acceptable by OpenCV.
@@ -366,5 +366,47 @@ def calibrate_camera_from_primer(frames: Any,
                 # "camera_params": camera_params_out,
                 # "image_poses": image_poses,
                 "num_registered_images": best_recon.num_frames()}
+    except Exception as e:
+        return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
+    
+    
+def calibrate_camera_vggt_from_primer(frames: Any,
+                                 output_dir: str,
+                                 args: argparse.Namespace,
+                                 clear_previous: bool = False,
+                                 min_images: int = 5,
+                                 stage3_camera_model: str = "PINHOLE",
+                                 stage3_camera_mode: pycolmap.CameraMode = pycolmap.CameraMode.SINGLE,
+                                 ) -> Dict[str, Any]:
+    if VGGT_FOUND is False:
+        return {"success": False, "message": f"VGGT module not found. Stage 3 calibration is NOT available.", "output_dir": output_dir}
+    
+    if len(frames) < min_images:
+        return {"success": False, "message": f"Need >= {min_images} frames", "output_dir": output_dir}
+    
+    if clear_previous and os.path.isdir(output_dir):
+        print(f"Clearing previous output directory: {output_dir}")
+        shutil.rmtree(output_dir, ignore_errors=True)
+
+    stage3_dir = os.path.join(output_dir, "stage3")
+    os.makedirs(stage3_dir, exist_ok=True)
+    
+    frame_path_list = _write_images(frames, os.path.join(stage3_dir, "images"))
+    if len(frame_path_list) < min_images:
+        return {"success": False, "message": f"Only {len(frame_path_list)} valid images", "output_dir": output_dir}
+
+    try:
+        print(f"VGGT Stage 3 ({stage3_camera_model} and {str(stage3_camera_mode)}) calibration started.")
+        if args.scene_dir is None:
+            args.scene_dir = stage3_dir
+        vggt_colmap.demo_fn(args)
+
+        return {"success": True,
+                "message": f"VGGT calibration succeeded images",
+                "output_dir": output_dir,
+                # "camera_params": camera_params_out,
+                # "image_poses": image_poses,
+                # "num_registered_images": best_recon.num_frames()
+                }
     except Exception as e:
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}

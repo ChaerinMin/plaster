@@ -6,7 +6,7 @@ import json
 import primer
 import shutil
 from datetime import datetime
-from calibration import calibrate_camera_from_primer
+from calibration import calibrate_camera_from_primer, calibrate_camera_vggt_from_primer
 import traceback
 import sys
 import pycolmap
@@ -17,10 +17,29 @@ parser.add_argument("-d", "--day", type=str, help="If looking for a specific day
 parser.add_argument("--ms", type=str, help="If looking for a specific multisequence.", required=False, default=None)
 parser.add_argument("--time-thresh", type=float, default=20, help="Time sync threshold in ms.")
 parser.add_argument("-f", "--force-reserialize", action="store_true", help="Force reserialization of the source")
-parser.add_argument("--max-features", type=int, default=15000, help="Maximum number of features to detect per image.")
-parser.add_argument("--min-num-matches", type=int, default=15, help="Minimum number of matches required to consider a reconstruction valid.")
 parser.add_argument("--conf-thres-percent", type=float, default=50.0, help="Confidence threshold value for depth filtering in percent.")
 parser.add_argument("--wb-temp", type=int, default=4600, help="White balance temperature for image harmonization.")
+
+# VGGT COLMAP arguments. Used only if VGGT is available. Taken from https://raw.githubusercontent.com/facebookresearch/vggt/refs/heads/main/demo_colmap.py
+vg_group = parser.add_argument_group("VGGT COLMAP")
+vg_group.add_argument("--scene_dir", type=str, required=False, help="Directory containing the scene images", default=None)
+vg_group.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
+vg_group.add_argument("--use_ba", action="store_true", default=False, help="Use BA for reconstruction")
+######### BA parameters #########
+vg_group.add_argument(
+    "--max_reproj_error", type=float, default=8.0, help="Maximum reprojection error for reconstruction"
+)
+vg_group.add_argument("--shared_camera", action="store_true", default=False, help="Use shared camera for all images")
+vg_group.add_argument("--camera_type", type=str, default="SIMPLE_PINHOLE", help="Camera type for reconstruction")
+vg_group.add_argument("--vis_thresh", type=float, default=0.2, help="Visibility threshold for tracks")
+vg_group.add_argument("--query_frame_num", type=int, default=8, help="Number of frames to query")
+vg_group.add_argument("--max_query_pts", type=int, default=4096, help="Maximum number of query points")
+vg_group.add_argument(
+    "--fine_tracking", action="store_true", default=True, help="Use fine tracking (slower but more accurate)"
+)
+vg_group.add_argument(
+    "--conf_thres_value", type=float, default=5.0, help="Confidence threshold value for depth filtering (wo BA)"
+)
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -71,18 +90,13 @@ if __name__ == "__main__":
                     if m.get("frame") is not None
                 ]
 
-                calib_res = calibrate_camera_from_primer(
+                calib_res = calibrate_camera_vggt_from_primer(
                     frames=frame_data,
                     output_dir=calib_dir,
                     clear_previous=double_force_reserialize,
                     args=args,
-                    stage1_camera_model = "OPENCV",
-                    stage1_camera_mode = pycolmap.CameraMode.SINGLE,
-                    stage2_camera_model = "PINHOLE",
-                    stage2_camera_mode = pycolmap.CameraMode.SINGLE,
-                    stage3_camera_model = "PINHOLE",
-                    stage3_camera_mode = pycolmap.CameraMode.SINGLE,
-                    
+                    stage3_camera_model="PINHOLE",
+                    stage3_camera_mode=pycolmap.CameraMode.SINGLE,
                 )
                 print(f"Calibration: {calib_res}")
             except Exception as e:
