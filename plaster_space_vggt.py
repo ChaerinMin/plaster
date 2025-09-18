@@ -37,9 +37,6 @@ vg_group.add_argument("--max_query_pts", type=int, default=4096, help="Maximum n
 vg_group.add_argument(
     "--fine_tracking", action="store_true", default=True, help="Use fine tracking (slower but more accurate)"
 )
-vg_group.add_argument(
-    "--conf_thres_value", type=float, default=5.0, help="Confidence threshold value for depth filtering (wo BA)"
-)
 
 if __name__ == "__main__":
     args = parser.parse_args()

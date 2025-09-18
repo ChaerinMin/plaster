@@ -255,45 +255,47 @@ def run_vggt_calibration(args):
 
         reconstruction_resolution = img_load_resolution
     else:
-        print('NOT YET SUPPORTED WITHOUT BA')
-        # conf_thres_value = args.conf_thres_value
-        # max_points_for_colmap = 100000  # randomly sample 3D points
-        # shared_camera = False  # in the feedforward manner, we do not support shared camera
-        # camera_type = "PINHOLE"  # in the feedforward manner, we only support PINHOLE camera
+        threshold_val = np.percentile(predictions['depth'], args.conf_thres_percent)
+        print('Threshold with value: ', threshold_val)
+        print('Min and Max of depth: ', np.min(predictions['depth']), np.max(predictions['depth']))
+        
+        max_points_for_colmap = 100000  # randomly sample 3D points
+        shared_camera = False  # in the feedforward manner, we do not support shared camera
+        camera_type = "PINHOLE"  # in the feedforward manner, we only support PINHOLE camera
 
-        # image_size = np.array([vggt_fixed_resolution, vggt_fixed_resolution])
-        # num_frames, height, width, _ = points_3d.shape
+        image_size = np.array([vggt_fixed_resolution, vggt_fixed_resolution])
+        num_frames, height, width, _ = points_3d.shape
 
-        # points_rgb = F.interpolate(
-        #     images, size=(vggt_fixed_resolution, vggt_fixed_resolution), mode="bilinear", align_corners=False
-        # )
-        # points_rgb = (points_rgb.cpu().numpy() * 255).astype(np.uint8)
-        # points_rgb = points_rgb.transpose(0, 2, 3, 1)
+        points_rgb = F.interpolate(
+            images, size=(vggt_fixed_resolution, vggt_fixed_resolution), mode="bilinear", align_corners=False
+        )
+        points_rgb = (points_rgb.cpu().numpy() * 255).astype(np.uint8)
+        points_rgb = points_rgb.transpose(0, 2, 3, 1)
 
-        # # (S, H, W, 3), with x, y coordinates and frame indices
-        # points_xyf = create_pixel_coordinate_grid(num_frames, height, width)
+        # (S, H, W, 3), with x, y coordinates and frame indices
+        points_xyf = create_pixel_coordinate_grid(num_frames, height, width)
 
-        # conf_mask = depth_conf >= conf_thres_value
-        # # at most writing 100000 3d points to colmap reconstruction object
-        # conf_mask = randomly_limit_trues(conf_mask, max_points_for_colmap)
+        conf_mask = depth_conf >= threshold_val
+        # at most writing 100000 3d points to colmap reconstruction object
+        conf_mask = randomly_limit_trues(conf_mask, max_points_for_colmap)
 
-        # points_3d = points_3d[conf_mask]
-        # points_xyf = points_xyf[conf_mask]
-        # points_rgb = points_rgb[conf_mask]
+        points_3d = points_3d[conf_mask]
+        points_xyf = points_xyf[conf_mask]
+        points_rgb = points_rgb[conf_mask]
 
-        # print("Converting to COLMAP format")
-        # reconstruction = batch_np_matrix_to_pycolmap_wo_track(
-        #     points_3d,
-        #     points_xyf,
-        #     points_rgb,
-        #     extrinsic,
-        #     intrinsic,
-        #     image_size,
-        #     shared_camera=shared_camera,
-        #     camera_type=camera_type,
-        # )
+        print("Converting to COLMAP format")
+        reconstruction = batch_np_matrix_to_pycolmap_wo_track(
+            points_3d,
+            points_xyf,
+            points_rgb,
+            extrinsic,
+            intrinsic,
+            image_size,
+            shared_camera=shared_camera,
+            camera_type=camera_type,
+        )
 
-        # reconstruction_resolution = vggt_fixed_resolution
+        reconstruction_resolution = vggt_fixed_resolution
 
     reconstruction = rename_colmap_recons_and_rescale_camera(
         reconstruction,
