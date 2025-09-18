@@ -188,9 +188,9 @@ def run_vggt_calibration(args):
         with torch.cuda.amp.autocast(dtype=dtype):
             predictions = model(images)
             
-    # unload the model to save GPU memory
-    model.cpu()
-    torch.cuda.empty_cache()
+    # # unload the model to save GPU memory
+    # model.cpu()
+    # torch.cuda.empty_cache()
 
     # Convert pose encoding to extrinsic and intrinsic matrices
     print("Converting pose encoding to extrinsic and intrinsic matrices...")
