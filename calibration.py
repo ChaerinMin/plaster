@@ -240,7 +240,7 @@ def calibrate_camera_from_primer(frames: Any,
 
         stage2_image_dir = os.path.join(stage2_dir, "images")
         os.makedirs(stage2_image_dir, exist_ok=True)
-        if VGGT_FOUND and args.run_vggt_stage3:
+        if VGGT_FOUND:
             stage3_image_dir = os.path.join(stage3_dir, "images")
             os.makedirs(stage3_image_dir, exist_ok=True)
 
@@ -256,7 +256,7 @@ def calibrate_camera_from_primer(frames: Any,
                 undist_img = undistort_images(input_img=img, camera_params=cam.params.tolist(), camera_model=stage1_camera_model)
                 # undist_img is from OpenCV pipeline (BGR); save directly for correct RGB display.
                 cv2.imwrite(os.path.join(stage2_image_dir, f"{id}.jpg"), undist_img)
-                if VGGT_FOUND and args.run_vggt_stage3:
+                if VGGT_FOUND:
                     # undist_img is from OpenCV pipeline (BGR); save directly for correct RGB display.
                     cv2.imwrite(os.path.join(stage3_image_dir, f"{id}.jpg"), undist_img)
 
@@ -354,7 +354,7 @@ def calibrate_camera_from_primer(frames: Any,
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
         
     try:
-        if(args.run_vggt_stage3 and VGGT_FOUND):
+        if(VGGT_FOUND):
             print(f"VGGT Stage 3 ({stage3_camera_model} and {str(stage3_camera_mode)}) calibration started.")
             if args.scene_dir is None:
                 args.scene_dir = stage3_dir
