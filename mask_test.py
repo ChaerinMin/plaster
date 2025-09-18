@@ -16,16 +16,16 @@ if __name__ == "__main__":
     predictions, image_names = vggt_colmap.run_model(args.input_dir)
     
     conf_mask = None
-    # if 'depth_conf' in predictions:
-    #     threshold_val = np.percentile(predictions['depth_conf'], conf_thres_percent)
-    #     print('Threshold with value: ', threshold_val)
-    #     print('Min and Max of depth conf: ', np.min(predictions['depth_conf']), np.max(predictions['depth_conf']))
-    #     conf_mask = predictions['depth_conf'] >= threshold_val
-    if 'depth' in predictions:
-        threshold_val = np.percentile(predictions['depth'], args.thres_percent)
+    if 'depth_conf' in predictions:
+        threshold_val = np.percentile(predictions['depth_conf'], args.thres_percent)
         print('Threshold with value: ', threshold_val)
-        print('Min and Max of depth: ', np.min(predictions['depth']), np.max(predictions['depth']))
-        conf_mask = predictions['depth'] < threshold_val
+        print('Min and Max of depth conf: ', np.min(predictions['depth_conf']), np.max(predictions['depth_conf']))
+        conf_mask = predictions['depth_conf'] >= threshold_val
+    # if 'depth' in predictions:
+    #     threshold_val = np.percentile(predictions['depth'], args.thres_percent)
+    #     print('Threshold with value: ', threshold_val)
+    #     print('Min and Max of depth: ', np.min(predictions['depth']), np.max(predictions['depth']))
+    #     conf_mask = predictions['depth'] < threshold_val
     
     os.makedirs(os.path.join(args.input_dir, "masks"), exist_ok=True)
     print('Depth map shape: ', predictions['depth'].shape)

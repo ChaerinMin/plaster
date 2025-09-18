@@ -112,7 +112,7 @@ def run_model(target_dir, seed=42) -> dict:
         raise ValueError("No images found. Check your upload.")
 
     images = load_and_preprocess_images(image_names).to(device)
-    images_old, original_coords = load_and_preprocess_images_square(image_names, img_load_resolution)
+    # images_old, original_coords = load_and_preprocess_images_square(image_names, img_load_resolution)
     print(f"Preprocessed images shape: {images.shape}")
 
     # Run inference
@@ -256,9 +256,13 @@ def run_vggt_calibration(args):
 
         reconstruction_resolution = img_load_resolution
     else:
-        threshold_val = np.percentile(depth_conf, args.conf_thres_percent)
-        print('Threshold with value: ', threshold_val)
+        conf_threshold_val = np.percentile(depth_conf, args.conf_thres_percent)
+        print('Threshold with value: ', conf_threshold_val)
         print('Min and Max of depth conf: ', np.min(depth_conf), np.max(depth_conf))
+        
+        depth_threshold_val = np.percentile(depth_map, args.depth_thres_percent)
+        print('Depth Threshold with value (NOT YET IMPLEMENTED): ', depth_threshold_val)
+        print('Min and Max of depth: ', np.min(depth_map), np.max(depth_map))
 
         max_points_for_colmap = 100000  # randomly sample 3D points
         shared_camera = False  # in the feedforward manner, we do not support shared camera
@@ -276,7 +280,7 @@ def run_vggt_calibration(args):
         # (S, H, W, 3), with x, y coordinates and frame indices
         points_xyf = create_pixel_coordinate_grid(num_frames, height, width)
 
-        conf_mask = depth_conf >= threshold_val
+        conf_mask = depth_conf >= conf_threshold_val
         # at most writing 100000 3d points to colmap reconstruction object
         conf_mask = randomly_limit_trues(conf_mask, max_points_for_colmap)
 

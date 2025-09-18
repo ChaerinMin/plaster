@@ -17,6 +17,7 @@ parser.add_argument("-d", "--day", type=str, help="If looking for a specific day
 parser.add_argument("--ms", type=str, help="If looking for a specific multisequence.", required=False, default=None)
 parser.add_argument("--time-thresh", type=float, default=20, help="Time sync threshold in ms.")
 parser.add_argument("-f", "--force-reserialize", action="store_true", help="Force reserialization of the source")
+parser.add_argument("--depth-thres-percent", type=float, default=0.0, help="Depth threshold value for depth filtering in percent.")
 parser.add_argument("--conf-thres-percent", type=float, default=50.0, help="Confidence threshold value for depth filtering in percent.")
 parser.add_argument("--wb-temp", type=int, default=4600, help="White balance temperature for image harmonization.")
 
