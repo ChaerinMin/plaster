@@ -203,6 +203,7 @@ def run_vggt_calibration(args):
     points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)
 
     if args.use_ba:
+        print('WARNING: BA might run out of memory. Try without --use_ba if that happens.')
         image_size = np.array(images.shape[-2:])
         scale = img_load_resolution / vggt_fixed_resolution
         shared_camera = args.shared_camera
@@ -255,10 +256,10 @@ def run_vggt_calibration(args):
 
         reconstruction_resolution = img_load_resolution
     else:
-        threshold_val = np.percentile(depth_map, args.conf_thres_percent)
+        threshold_val = np.percentile(depth_conf, args.conf_thres_percent)
         print('Threshold with value: ', threshold_val)
-        print('Min and Max of depth: ', np.min(depth_map), np.max(depth_map))
-    
+        print('Min and Max of depth conf: ', np.min(depth_conf), np.max(depth_conf))
+
         max_points_for_colmap = 100000  # randomly sample 3D points
         shared_camera = False  # in the feedforward manner, we do not support shared camera
         camera_type = "PINHOLE"  # in the feedforward manner, we only support PINHOLE camera
