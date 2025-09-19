@@ -32,9 +32,10 @@ if __name__ == "__main__":
         print(f"Source directory not found: {args.source}")
         exit(1)
         
-    if not os.path.exists(os.path.join(args.source, args.day)):
-        print(f"Day directory not found: {os.path.join(args.source, args.day)}")
-        exit(1)
+    if args.day is not None:
+        if not os.path.exists(os.path.join(args.source, args.day)):
+            print(f"Day directory not found: {os.path.join(args.source, args.day)}")
+            exit(1)
         
     # First, cache the source directory and plaster.json
     source_plaster_path = os.path.join(args.source, "plaster.json")
