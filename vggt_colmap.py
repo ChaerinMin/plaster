@@ -208,26 +208,27 @@ def run_vggt_calibration(args):
         scale = img_load_resolution / vggt_fixed_resolution
         shared_camera = args.shared_camera
 
-        with torch.cuda.amp.autocast(dtype=dtype):
-            # Predicting Tracks
-            # Using VGGSfM tracker instead of VGGT tracker for efficiency
-            # VGGT tracker requires multiple backbone runs to query different frames (this is a problem caused by the training process)
-            # Will be fixed in VGGT v2
+        with torch.no_grad():
+            with torch.cuda.amp.autocast(dtype=dtype):
+                # Predicting Tracks
+                # Using VGGSfM tracker instead of VGGT tracker for efficiency
+                # VGGT tracker requires multiple backbone runs to query different frames (this is a problem caused by the training process)
+                # Will be fixed in VGGT v2
 
-            # You can also change the pred_tracks to tracks from any other methods
-            # e.g., from COLMAP, from CoTracker, or by chaining 2D matches from Lightglue/LoFTR.
-            pred_tracks, pred_vis_scores, pred_confs, points_3d, points_rgb = predict_tracks(
-                images,
-                conf=depth_conf,
-                points_3d=points_3d,
-                masks=None,
-                max_query_pts=args.max_query_pts,
-                query_frame_num=args.query_frame_num,
-                keypoint_extractor="aliked+sp",
-                fine_tracking=args.fine_tracking,
-            )
-            
-            torch.cuda.empty_cache()
+                # You can also change the pred_tracks to tracks from any other methods
+                # e.g., from COLMAP, from CoTracker, or by chaining 2D matches from Lightglue/LoFTR.
+                pred_tracks, pred_vis_scores, pred_confs, points_3d, points_rgb = predict_tracks(
+                    images,
+                    conf=depth_conf,
+                    points_3d=points_3d,
+                    masks=None,
+                    max_query_pts=args.max_query_pts,
+                    query_frame_num=args.query_frame_num,
+                    keypoint_extractor="aliked+sp",
+                    fine_tracking=args.fine_tracking,
+                )
+                
+                torch.cuda.empty_cache()
             
         # rescale the intrinsic matrix from 518 to 1024
         intrinsic[:, :2, :] *= scale
