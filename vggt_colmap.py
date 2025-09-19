@@ -224,7 +224,7 @@ def run_vggt_calibration(args):
                     masks=None,
                     max_query_pts=args.max_query_pts,
                     query_frame_num=args.query_frame_num,
-                    keypoint_extractor="aliked+sp",
+                    keypoint_extractor="aliked+sp+sift",
                     fine_tracking=args.fine_tracking,
                 )
                 
