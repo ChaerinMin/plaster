@@ -338,7 +338,7 @@ def run_vggt_calibration(args):
         if pts3d_img.size != 0:
             # Prepare batched extrinsics/intrinsics for NumPy projector
             extr_b = extrinsic[i][None, ...] # (1,3,4)
-            pyimage = reconstruction.images[i]
+            pyimage = reconstruction.images[i+1] # pycolmap image ids start from 1
             pycamera = reconstruction.cameras[pyimage.camera_id]
             print(pycamera.params)
 
