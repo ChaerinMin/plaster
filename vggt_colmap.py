@@ -329,7 +329,7 @@ def run_vggt_calibration(args):
     scale = img_load_resolution / vggt_fixed_resolution
     
     for i in range(images.shape[0]):
-        mask = np.zeros((vggt_fixed_resolution, vggt_fixed_resolution), dtype=np.uint8)
+        mask = np.zeros((images.shape[1], images.shape[2]), dtype=np.uint8)
 
         # Filter invalid/nans
         valid_pts = np.isfinite(points_3d).all(axis=1)
@@ -338,8 +338,10 @@ def run_vggt_calibration(args):
         if pts3d_img.size != 0:
             # Prepare batched extrinsics/intrinsics for NumPy projector
             extr_b = extrinsic[i][None, ...] # (1,3,4)
-            intr_b = intrinsic[i][None, ...] # (1,3,3)
+            intr_small = intrinsic[i][None, ...] # (1,3,3)
+            intr_b = get_original_cam_intrinsic(intr_small[0], original_coords[i].cpu().numpy(), img_size=vggt_fixed_resolution)[None, ...]  # (1,3,3)
             # print(f"Image {i}: extr_b shape: {extr_b.shape}, intr_b shape: {intr_b.shape}, pts3d_img shape: {pts3d_img.shape}")
+            print(intr_small)
             print(intr_b)
             pts2d_t, pts_cam_t = project_3D_points_np(
                 pts3d_img, extr_b, intr_b, default=0.0, only_points_cam=False
@@ -356,7 +358,7 @@ def run_vggt_calibration(args):
             if np.any(valid):
                 x = np.rint(x_f[valid]).astype(np.int32)
                 y = np.rint(y_f[valid]).astype(np.int32)
-                in_bounds = (x >= 0) & (y >= 0) & (x < vggt_fixed_resolution) & (y < vggt_fixed_resolution)
+                in_bounds = (x >= 0) & (y >= 0) & (x < images.shape[2]) & (y < images.shape[1])
                 if np.any(in_bounds):
                     mask[y[in_bounds], x[in_bounds]] = 255
         else:
@@ -394,6 +396,15 @@ def rename_colmap_recons(
         pyimage.name = image_paths[pyimageid - 1]
 
     return reconstruction
+
+def get_original_cam_intrinsic(intrinsic,original_coords, img_size):
+    real_image_size = original_coords[-2:]
+    resize_ratio = max(real_image_size) / img_size
+    pred_params = intrinsic.copy()
+    pred_params = pred_params * resize_ratio
+    real_pp = real_image_size / 2
+    pred_params[-2:] = real_pp  # center of the image
+    return pred_params
 
 def rename_colmap_recons_and_rescale_camera(
     reconstruction, image_paths, original_coords, img_size, shift_point2d_to_original_res=False, shared_camera=False
