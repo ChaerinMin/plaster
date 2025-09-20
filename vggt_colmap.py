@@ -381,7 +381,7 @@ def run_vggt_calibration(args):
         # mask_crop = mask[y0:y0 + h, x0:x0 + w]
 
         # # Load original image (BGR) and apply mask
-        # in_path = image_path_list[i]
+        in_path = image_path_list[i]
         out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path))
         # img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
         # if img_bgr is None:
