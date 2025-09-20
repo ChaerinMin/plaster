@@ -327,9 +327,10 @@ def run_vggt_calibration(args):
     print(f"images.shape: {images.shape}, points_3d.shape: {points_3d.shape}")
     
     scale = img_load_resolution / vggt_fixed_resolution
+    image_shape = cv2.imread(image_path_list[0]).shape
     
     for i in range(images.shape[0]):
-        mask = np.zeros((images.shape[1], images.shape[2]), dtype=np.uint8)
+        mask = np.zeros((image_shape[0], image_shape[1]), dtype=np.uint8)
 
         # Filter invalid/nans
         valid_pts = np.isfinite(points_3d).all(axis=1)
@@ -344,7 +345,7 @@ def run_vggt_calibration(args):
 
             intr_b = intrinsic[i][None, ...]  # (1,3,3)
             print(intr_b)
-            intr_b = make_intr_b_from_pycamera(pycamera)
+            intr_b = make_intrinsic_from_pycamera(pycamera)
             # print(f"Image {i}: extr_b shape: {extr_b.shape}, intr_b shape: {intr_b.shape}, pts3d_img shape: {pts3d_img.shape}")
             print(intr_b)
             
@@ -363,7 +364,7 @@ def run_vggt_calibration(args):
             if np.any(valid):
                 x = np.rint(x_f[valid]).astype(np.int32)
                 y = np.rint(y_f[valid]).astype(np.int32)
-                in_bounds = (x >= 0) & (y >= 0) & (x < images.shape[2]) & (y < images.shape[1])
+                in_bounds = (x >= 0) & (y >= 0) & (x < image_shape[1]) & (y < image_shape[0])
                 if np.any(in_bounds):
                     mask[y[in_bounds], x[in_bounds]] = 255
         else:
@@ -372,7 +373,6 @@ def run_vggt_calibration(args):
         # # Load original image (BGR) and apply mask
         in_path = image_path_list[i]
         out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path))
-        image_shape = cv2.imread(image_path_list[0]).shape
         # We are faking point splatting by dilation
         kernel_size = 7
         mask = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size)))
@@ -444,7 +444,7 @@ def rename_colmap_recons_and_rescale_camera(
     return reconstruction
 
 
-def make_intr_b_from_pycamera(pycamera):
+def make_intrinsic_from_pycamera(pycamera):
     if pycamera.model in [pycolmap.CameraModelId.SIMPLE_PINHOLE, pycolmap.CameraModelId.SIMPLE_RADIAL]:
         fx = fy = pycamera.params[0]
         cx = pycamera.params[1]
