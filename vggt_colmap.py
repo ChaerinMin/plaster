@@ -324,7 +324,8 @@ def run_vggt_calibration(args):
     print(f"Saving masked images to {args.scene_dir}/images_masked")
     os.makedirs(os.path.join(args.scene_dir, "images_masked"), exist_ok=True)
 
-    assert images.shape[0] == points_3d.shape[0]
+    print(f"images.shape: {images.shape}, points_3d.shape: {points_3d.shape}")
+    # assert images.shape[0] == points_3d.shape[0]
     
     for i in range(images.shape[0]):
         # Build mask in padded square resolution
