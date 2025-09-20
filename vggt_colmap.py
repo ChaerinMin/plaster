@@ -367,7 +367,7 @@ def run_vggt_calibration(args):
         out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path))
         image_shape = cv2.imread(image_path_list[0]).shape
         # We are faking point splatting by dilation
-        kernel_size = 5
+        kernel_size = 7
         mask = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size)))
         mask = cv2.resize(mask, (image_shape[0], image_shape[0]), interpolation=cv2.INTER_NEAREST)
 
