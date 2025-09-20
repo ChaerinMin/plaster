@@ -27,7 +27,7 @@ from vggt.models.vggt import VGGT
 from vggt.utils.load_fn import load_and_preprocess_images_square, load_and_preprocess_images
 from vggt.utils.pose_enc import pose_encoding_to_extri_intri
 from vggt.utils.geometry import unproject_depth_map_to_point_map
-from vggt.dependency.projection import project_3D_points
+from vggt.dependency.projection import project_3D_points_np
 from vggt.utils.helper import create_pixel_coordinate_grid, randomly_limit_trues
 from vggt.dependency.track_predict import predict_tracks
 from vggt.dependency.np_to_pycolmap import batch_np_matrix_to_pycolmap, batch_np_matrix_to_pycolmap_wo_track
@@ -202,8 +202,6 @@ def run_vggt_calibration(args):
     depth_conf = predictions["depth_conf"].squeeze(0).cpu().numpy()
 
     points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)
-    # Keep an untouched copy for per-pixel projection-based masking
-    points_3d_full = points_3d.copy()
 
     if args.use_ba:
         print('WARNING: BA might run out of memory. Try without --use_ba if that happens.')
@@ -326,19 +324,7 @@ def run_vggt_calibration(args):
     print(f"Saving masked images to {args.scene_dir}/images_masked")
     os.makedirs(os.path.join(args.scene_dir, "images_masked"), exist_ok=True)
 
-    # Project 3D points into padded square space (img_load_resolution), then crop to original
-    scale_to_padded = img_load_resolution / vggt_fixed_resolution
-
-    # Prepare intrinsics scaled to the padded square resolution (1024) for projection
-    if 'reconstruction_resolution' in locals() and reconstruction_resolution == img_load_resolution:
-        intrinsics_for_proj = intrinsic  # already scaled in BA branch
-    else:
-        intrinsics_for_proj = intrinsic.copy()
-        intrinsics_for_proj[:, :2, :] *= scale_to_padded
-
-    # Get numpy for cropping coords
-    original_coords_np = original_coords.cpu().numpy()
-    assert images.shape[0] == points_3d_full.shape[0]
+    assert images.shape[0] == points_3d.shape[0]
     
     for i in range(images.shape[0]):
         # Build mask in padded square resolution
@@ -346,23 +332,22 @@ def run_vggt_calibration(args):
         mask = np.zeros((H_pad, W_pad), dtype=np.uint8)
 
         # Per-pixel 3D points for this image (S, H, W, 3) -> (N, 3)
-        pts3d_img = points_3d_full[i].reshape(-1, 3)
+        pts3d_img = points_3d[i].reshape(-1, 3)
         # Filter invalid/nans
         valid_pts = np.isfinite(pts3d_img).all(axis=1)
         pts3d_img = pts3d_img[valid_pts]
 
         if pts3d_img.size != 0:
-            # Prepare tensors for projection
-            pts3d_t = torch.from_numpy(pts3d_img.astype(np.float32))  # Nx3
-            extrinsic_t = torch.from_numpy(extrinsic[i].astype(np.float32)).unsqueeze(0)  # 1x3x4
-            intrinsic_t = torch.from_numpy(intrinsics_for_proj[i].astype(np.float32)).unsqueeze(0)  # 1x3x3
-
-            with torch.no_grad():
-                pts2d_t, pts_cam_t = project_3D_points(pts3d_t, extrinsic_t, intrinsic_t)
+            # Prepare batched extrinsics/intrinsics for NumPy projector
+            extr_b = extrinsic[i][None, ...]        # (1,3,4)
+            intr_b = intrinsic[i][None, ...]  # (1,3,3)
+            pts2d_t, pts_cam_t = project_3D_points_np(
+                pts3d_img, extr_b, intr_b, default=0.0, only_points_cam=False
+            )
 
             # Extract and filter valid projected points
-            pts2d = pts2d_t[0].cpu().numpy()  # Nx2
-            z_cam = pts_cam_t[0, 2].cpu().numpy()  # N
+            pts2d = pts2d_t[0]             # (N,2) as np.ndarray
+            z_cam = pts_cam_t[0, 2]        # (N,) as np.ndarray
             x_f = pts2d[:, 0]
             y_f = pts2d[:, 1]
             valid = (
@@ -374,11 +359,6 @@ def run_vggt_calibration(args):
                 in_bounds = (x >= 0) & (y >= 0) & (x < W_pad) & (y < H_pad)
                 if np.any(in_bounds):
                     mask[y[in_bounds], x[in_bounds]] = 255
-
-        # # Crop mask to original image region
-        # x0, y0 = original_coords_np[i, 0:2].astype(int)
-        # w, h = original_coords_np[i, 2:4].astype(int)
-        # mask_crop = mask[y0:y0 + h, x0:x0 + w]
 
         # # Load original image (BGR) and apply mask
         in_path = image_path_list[i]
