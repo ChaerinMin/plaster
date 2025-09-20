@@ -366,8 +366,7 @@ def run_vggt_calibration(args):
             print(f"Warning: No valid 3D points for image {i}, saving empty mask.")
 
         # # Load original image (BGR) and apply mask
-        in_path = image_path_list[i]
-        out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path))
+        in_path = image_path_list[i]        
         # We are faking point splatting by dilation
         kernel_size = 11
         mask = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size)))
@@ -379,8 +378,11 @@ def run_vggt_calibration(args):
         if img_bgr is None:
             print(f"Warning: failed to read image {in_path}; skipping.")
             continue
-        masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask)
-        ok = cv2.imwrite(out_path, masked_bgr)
+        # Create BGRA image with mask in alpha channel
+        img_bgra = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2BGRA)
+        img_bgra[:, :, 3] = mask
+        out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path) + '.png')
+        ok = cv2.imwrite(out_path, img_bgra)
         # ok = cv2.imwrite(out_path, mask)
         if not ok:
             print(f"Warning: failed to write masked image {out_path}")
