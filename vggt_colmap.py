@@ -394,7 +394,28 @@ def run_vggt_calibration(args):
         else:
             mask_canvas = mask
 
-        x0, y0, w, h = original_coords_np[i]
+        # Robustly parse original_coords row which may be [x1,y1,x2,y2,width,height]
+        oc = original_coords_np[i]
+        # Ensure we can handle various lengths: 4 (x0,y0,w,h), 6 (x1,y1,x2,y2,w,h), or 4 via x2-x1
+        x0 = int(oc[0])
+        y0 = int(oc[1])
+        w = h = None
+        if len(oc) >= 4:
+            x2 = int(oc[2])
+            y2 = int(oc[3])
+            w_calc = max(1, x2 - x0)
+            h_calc = max(1, y2 - y0)
+        else:
+            w_calc = h_calc = 1
+        if len(oc) >= 6:
+            w = int(oc[4])
+            h = int(oc[5])
+        # Fallbacks if width/height absent or invalid
+        if w is None or w <= 0:
+            w = w_calc
+        if h is None or h <= 0:
+            h = h_calc
+
         # Clip to canvas in rare cases
         x0 = max(0, min(x0, img_load_resolution - 1))
         y0 = max(0, min(y0, img_load_resolution - 1))
