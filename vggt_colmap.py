@@ -357,7 +357,7 @@ def run_vggt_calibration(args):
             if np.any(valid):
                 x = np.rint(x_f[valid]).astype(np.int32)
                 y = np.rint(y_f[valid]).astype(np.int32)
-                in_bounds = (x >= 0) & (y >= 0) & (x < vggt_fixed_resolution) & (y < img_load_resolution)
+                in_bounds = (x >= 0) & (y >= 0) & (x < vggt_fixed_resolution) & (y < vggt_fixed_resolution)
                 if np.any(in_bounds):
                     mask[y[in_bounds], x[in_bounds]] = 255
         else:
