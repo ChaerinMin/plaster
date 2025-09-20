@@ -344,7 +344,6 @@ def run_vggt_calibration(args):
             pycamera = reconstruction.cameras[pyimage.camera_id]
             intr_b = make_intrinsic_from_pycamera(pycamera)
             # print(f"Image {i}: extr_b shape: {extr_b.shape}, intr_b shape: {intr_b.shape}, pts3d_img shape: {pts3d_img.shape}")
-            print(intr_b)
             
             pts2d_t, pts_cam_t = project_3D_points_np(
                 pts3d_img, extr_b, intr_b, default=0.0, only_points_cam=False
@@ -371,15 +370,14 @@ def run_vggt_calibration(args):
         in_path = image_path_list[i]
         out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path))
         # We are faking point splatting by dilation
-        kernel_size = 7
+        kernel_size = 11
         mask = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size)))
-        # mask = cv2.resize(mask, (image_shape[0], image_shape[0]), interpolation=cv2.INTER_NEAREST)
 
-        # img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
-        # if img_bgr is None:
-        #     print(f"Warning: failed to read image {in_path}; skipping.")
-        #     continue
-        # masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask)
+        img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
+        if img_bgr is None:
+            print(f"Warning: failed to read image {in_path}; skipping.")
+            continue
+        masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask)
         # ok = cv2.imwrite(out_path, masked_bgr)
         ok = cv2.imwrite(out_path, mask)
         if not ok:
