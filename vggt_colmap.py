@@ -266,7 +266,7 @@ def run_vggt_calibration(args):
         print('Depth Threshold with value (NOT YET IMPLEMENTED): ', depth_threshold_val)
         print('Min and Max of depth: ', np.min(depth_map), np.max(depth_map))
 
-        max_points_for_colmap = 100000  # randomly sample 3D points
+        max_points_for_colmap = 200000  # randomly sample 3D points
         shared_camera = False  # in the feedforward manner, we do not support shared camera
         camera_type = "PINHOLE"  # in the feedforward manner, we only support PINHOLE camera
 
