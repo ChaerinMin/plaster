@@ -26,7 +26,8 @@ import cv2
 from vggt.models.vggt import VGGT
 from vggt.utils.load_fn import load_and_preprocess_images_square, load_and_preprocess_images
 from vggt.utils.pose_enc import pose_encoding_to_extri_intri
-from vggt.utils.geometry import unproject_depth_map_to_point_map, project_3D_points
+from vggt.utils.geometry import unproject_depth_map_to_point_map
+from vggt.dependency.projection import project_3D_points
 from vggt.utils.helper import create_pixel_coordinate_grid, randomly_limit_trues
 from vggt.dependency.track_predict import predict_tracks
 from vggt.dependency.np_to_pycolmap import batch_np_matrix_to_pycolmap, batch_np_matrix_to_pycolmap_wo_track
