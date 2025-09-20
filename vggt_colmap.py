@@ -325,18 +325,13 @@ def run_vggt_calibration(args):
     os.makedirs(os.path.join(args.scene_dir, "images_masked"), exist_ok=True)
 
     print(f"images.shape: {images.shape}, points_3d.shape: {points_3d.shape}")
-    # assert images.shape[0] == points_3d.shape[0]
     
     for i in range(images.shape[0]):
-        # Build mask in padded square resolution
-        H_pad = W_pad = img_load_resolution
-        mask = np.zeros((H_pad, W_pad), dtype=np.uint8)
+        mask = np.zeros((img_load_resolution, img_load_resolution), dtype=np.uint8)
 
-        # Per-pixel 3D points for this image (S, H, W, 3) -> (N, 3)
-        pts3d_img = points_3d[i].reshape(-1, 3)
         # Filter invalid/nans
-        valid_pts = np.isfinite(pts3d_img).all(axis=1)
-        pts3d_img = pts3d_img[valid_pts]
+        valid_pts = np.isfinite(points_3d[i]).all(axis=1)
+        pts3d_img = points_3d[i][valid_pts]
 
         if pts3d_img.size != 0:
             # Prepare batched extrinsics/intrinsics for NumPy projector
@@ -357,19 +352,23 @@ def run_vggt_calibration(args):
             if np.any(valid):
                 x = np.rint(x_f[valid]).astype(np.int32)
                 y = np.rint(y_f[valid]).astype(np.int32)
-                in_bounds = (x >= 0) & (y >= 0) & (x < W_pad) & (y < H_pad)
+                in_bounds = (x >= 0) & (y >= 0) & (x < img_load_resolution) & (y < img_load_resolution)
                 if np.any(in_bounds):
                     mask[y[in_bounds], x[in_bounds]] = 255
+        else:
+            print(f"Warning: No valid 3D points for image {i}, saving empty mask.")
 
         # # Load original image (BGR) and apply mask
         in_path = image_path_list[i]
         out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path))
+        # image_shape = cv2.imread(image_path_list[0]).shape
+        # mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_CUBIC)
         # img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
         # if img_bgr is None:
         #     print(f"Warning: failed to read image {in_path}; skipping.")
         #     continue
-        # if img_bgr.shape[0] != h or img_bgr.shape[1] != w:
-        #     img_bgr = cv2.resize(img_bgr, (w, h), interpolation=cv2.INTER_LINEAR)
+        # if img_bgr.shape[0] != image_shape[0] or img_bgr.shape[1] != image_shape[1]:
+        #     img_bgr = cv2.resize(img_bgr, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_LINEAR)
 
         # masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask_crop)
         # ok = cv2.imwrite(out_path, masked_bgr)
