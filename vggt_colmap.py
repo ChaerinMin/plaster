@@ -367,7 +367,7 @@ def run_vggt_calibration(args):
         out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path))
         image_shape = cv2.imread(image_path_list[0]).shape
         # We are faking point splatting by downsampling the mask and upsampling to original image size
-        mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_CUBIC)
+        mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_NEAREST)
         img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
         if img_bgr is None:
             print(f"Warning: failed to read image {in_path}; skipping.")
