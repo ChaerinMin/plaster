@@ -202,8 +202,6 @@ def run_vggt_calibration(args):
     depth_conf = predictions["depth_conf"].squeeze(0).cpu().numpy()
 
     points_3d = unproject_depth_map_to_point_map(depth_map, extrinsic, intrinsic)
-    # Preserve full per-pixel 3D map for later mask projection
-    points_3d_full = points_3d.copy()
 
     if args.use_ba:
         print('WARNING: BA might run out of memory. Try without --use_ba if that happens.')
@@ -326,38 +324,34 @@ def run_vggt_calibration(args):
     print(f"Saving masked images to {args.scene_dir}/images_masked")
     os.makedirs(os.path.join(args.scene_dir, "images_masked"), exist_ok=True)
 
-    print(f"images.shape: {images.shape}, points_3d_full.shape: {points_3d_full.shape}")
-
-    # Splat kernel (odd): dilate mask to cover a small neighborhood around projected points
-    splat_kernel = 3
-    splat_se = cv2.getStructuringElement(cv2.MORPH_RECT, (splat_kernel, splat_kernel))
-
-    # Original coordinates for cropping back from padded square (1024) to native WxH
-    original_coords_np = original_coords.cpu().numpy().astype(int)
-
+    print(f"images.shape: {images.shape}, points_3d.shape: {points_3d.shape}")
+    
+    scale = img_load_resolution / vggt_fixed_resolution
+    
     for i in range(images.shape[0]):
-        intr_b = intrinsic[i][None, ...]
-        print(intr_b)
         mask = np.zeros((vggt_fixed_resolution, vggt_fixed_resolution), dtype=np.uint8)
 
-        # Per-image per-pixel 3D points and validity
-        pts3d_img = points_3d_full[i].reshape(-1, 3)
-        valid_pts = np.isfinite(pts3d_img).all(axis=1)
-        pts3d_img = pts3d_img[valid_pts]
+        # Filter invalid/nans
+        valid_pts = np.isfinite(points_3d).all(axis=1)
+        pts3d_img = points_3d[valid_pts]
 
         if pts3d_img.size != 0:
             # Prepare batched extrinsics/intrinsics for NumPy projector
             extr_b = extrinsic[i][None, ...]        # (1,3,4)
+            intr_b = intrinsic[i][None, ...]  # (1,3,3)
+            # print(f"Image {i}: extr_b shape: {extr_b.shape}, intr_b shape: {intr_b.shape}, pts3d_img shape: {pts3d_img.shape}")
             pts2d_t, pts_cam_t = project_3D_points_np(
                 pts3d_img, extr_b, intr_b, default=0.0, only_points_cam=False
             )
 
             # Extract and filter valid projected points
-            pts2d = pts2d_t[0]             # (N,2)
-            z_cam = pts_cam_t[0, 2]        # (N,)
+            pts2d = pts2d_t[0]             # (N,2) as np.ndarray
+            z_cam = pts_cam_t[0, 2]        # (N,) as np.ndarray
             x_f = pts2d[:, 0]
             y_f = pts2d[:, 1]
-            valid = np.isfinite(x_f) & np.isfinite(y_f) & np.isfinite(z_cam) & (z_cam > 0)
+            valid = (
+                np.isfinite(x_f) & np.isfinite(y_f) & np.isfinite(z_cam) & (z_cam > 0)
+            )
             if np.any(valid):
                 x = np.rint(x_f[valid]).astype(np.int32)
                 y = np.rint(y_f[valid]).astype(np.int32)
@@ -367,19 +361,18 @@ def run_vggt_calibration(args):
         else:
             print(f"Warning: No valid 3D points for image {i}, saving empty mask.")
 
-        # # Splatting: dilate mask to expand hits by the given kernel size
-        # if mask.any():
-        #     mask = cv2.dilate(mask, splat_se, iterations=1)
-
-        # Load original image (BGR) and apply mask
+        # # Load original image (BGR) and apply mask
         in_path = image_path_list[i]
         out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path))
+        image_shape = cv2.imread(image_path_list[0]).shape
+        # We are faking point splatting by downsampling the mask and upsampling to original image size
+        mask = cv2.resize(mask, (128, 128), interpolation=cv2.INTER_CUBIC)
+        mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_CUBIC)
         img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
         if img_bgr is None:
             print(f"Warning: failed to read image {in_path}; skipping.")
             continue
-
-        # masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask_crop)
+        masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask)
         # ok = cv2.imwrite(out_path, masked_bgr)
         ok = cv2.imwrite(out_path, mask)
         if not ok:
