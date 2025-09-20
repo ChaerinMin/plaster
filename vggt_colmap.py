@@ -341,6 +341,7 @@ def run_vggt_calibration(args):
             intr_b = intrinsic[i][None, ...]  # (1,3,3)
             intr_b[:, :2, :] *= scale  # rescale intrinsics to the original image resolution
             print(f"Image {i}: extr_b shape: {extr_b.shape}, intr_b shape: {intr_b.shape}, pts3d_img shape: {pts3d_img.shape}")
+            print(intr_b)
             pts2d_t, pts_cam_t = project_3D_points_np(
                 pts3d_img, extr_b, intr_b, default=0.0, only_points_cam=False
             )
