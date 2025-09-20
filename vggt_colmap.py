@@ -315,11 +315,6 @@ def run_vggt_calibration(args):
         shared_camera=shared_camera,
     )   
 
-    # reconstruction = rename_colmap_recons(
-    #     reconstruction,
-    #     base_image_path_list
-    # )   
-
     print(f"Saving reconstruction to {args.scene_dir}/sparse")
     sparse_reconstruction_dir = os.path.join(args.scene_dir, "sparse")
     os.makedirs(sparse_reconstruction_dir, exist_ok=True)
@@ -343,12 +338,9 @@ def run_vggt_calibration(args):
 
     # Get numpy for cropping coords
     original_coords_np = original_coords.cpu().numpy()
-
+    assert images.shape[0] == points_3d_full.shape[0]
+    
     for i in range(images.shape[0]):
-        if cv2 is None:
-            print("OpenCV not available; skipping masked image writing.")
-            break
-
         # Build mask in padded square resolution
         H_pad = W_pad = img_load_resolution
         mask = np.zeros((H_pad, W_pad), dtype=np.uint8)
@@ -383,23 +375,24 @@ def run_vggt_calibration(args):
                 if np.any(in_bounds):
                     mask[y[in_bounds], x[in_bounds]] = 255
 
-        # Crop mask to original image region
-        x0, y0 = original_coords_np[i, 0:2].astype(int)
-        w, h = original_coords_np[i, 2:4].astype(int)
-        mask_crop = mask[y0:y0 + h, x0:x0 + w]
+        # # Crop mask to original image region
+        # x0, y0 = original_coords_np[i, 0:2].astype(int)
+        # w, h = original_coords_np[i, 2:4].astype(int)
+        # mask_crop = mask[y0:y0 + h, x0:x0 + w]
 
-        # Load original image (BGR) and apply mask
-        in_path = image_path_list[i]
+        # # Load original image (BGR) and apply mask
+        # in_path = image_path_list[i]
         out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path))
-        img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
-        if img_bgr is None:
-            print(f"Warning: failed to read image {in_path}; skipping.")
-            continue
-        if img_bgr.shape[0] != h or img_bgr.shape[1] != w:
-            img_bgr = cv2.resize(img_bgr, (w, h), interpolation=cv2.INTER_LINEAR)
+        # img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
+        # if img_bgr is None:
+        #     print(f"Warning: failed to read image {in_path}; skipping.")
+        #     continue
+        # if img_bgr.shape[0] != h or img_bgr.shape[1] != w:
+        #     img_bgr = cv2.resize(img_bgr, (w, h), interpolation=cv2.INTER_LINEAR)
 
-        masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask_crop)
-        ok = cv2.imwrite(out_path, masked_bgr)
+        # masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask_crop)
+        # ok = cv2.imwrite(out_path, masked_bgr)
+        ok = cv2.imwrite(out_path, mask)
         if not ok:
             print(f"Warning: failed to write masked image {out_path}")
 
