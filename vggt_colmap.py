@@ -328,6 +328,7 @@ def run_vggt_calibration(args):
     
     scale = img_load_resolution / vggt_fixed_resolution
     image_shape = cv2.imread(image_path_list[0]).shape
+    print(f"Image shape: {image_shape}")
     
     for i in range(images.shape[0]):
         mask = np.zeros((image_shape[0], image_shape[1]), dtype=np.uint8)
@@ -341,10 +342,6 @@ def run_vggt_calibration(args):
             extr_b = extrinsic[i][None, ...] # (1,3,4)
             pyimage = reconstruction.images[i+1] # pycolmap image ids start from 1
             pycamera = reconstruction.cameras[pyimage.camera_id]
-            print(pycamera.params)
-
-            intr_b = intrinsic[i][None, ...]  # (1,3,3)
-            print(intr_b)
             intr_b = make_intrinsic_from_pycamera(pycamera)
             # print(f"Image {i}: extr_b shape: {extr_b.shape}, intr_b shape: {intr_b.shape}, pts3d_img shape: {pts3d_img.shape}")
             print(intr_b)
