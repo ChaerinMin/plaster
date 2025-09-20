@@ -371,11 +371,11 @@ def run_vggt_calibration(args):
         mask = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size)))
         mask = cv2.resize(mask, (image_shape[1], image_shape[1]), interpolation=cv2.INTER_NEAREST)
 
-        img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
-        if img_bgr is None:
-            print(f"Warning: failed to read image {in_path}; skipping.")
-            continue
-        masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask)
+        # img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
+        # if img_bgr is None:
+        #     print(f"Warning: failed to read image {in_path}; skipping.")
+        #     continue
+        # masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask)
         # ok = cv2.imwrite(out_path, masked_bgr)
         ok = cv2.imwrite(out_path, mask)
         if not ok:
