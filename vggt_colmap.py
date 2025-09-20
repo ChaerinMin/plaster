@@ -329,11 +329,7 @@ def run_vggt_calibration(args):
     print(f"images.shape: {images.shape}, points_3d_full.shape: {points_3d_full.shape}")
 
     # Splat kernel (odd): dilate mask to cover a small neighborhood around projected points
-    splat_kernel = getattr(args, "splat_kernel", 1)
-    if splat_kernel < 1:
-        splat_kernel = 1
-    if splat_kernel % 2 == 0:
-        splat_kernel += 1
+    splat_kernel = 3
     splat_se = cv2.getStructuringElement(cv2.MORPH_RECT, (splat_kernel, splat_kernel))
 
     # Original coordinates for cropping back from padded square (1024) to native WxH
@@ -376,9 +372,9 @@ def run_vggt_calibration(args):
         else:
             print(f"Warning: No valid 3D points for image {i}, saving empty mask.")
 
-        # Splatting: dilate mask to expand hits by the given kernel size
-        if mask.any():
-            mask = cv2.dilate(mask, splat_se, iterations=1)
+        # # Splatting: dilate mask to expand hits by the given kernel size
+        # if mask.any():
+        #     mask = cv2.dilate(mask, splat_se, iterations=1)
 
         # Load original image (BGR) and apply mask
         in_path = image_path_list[i]
