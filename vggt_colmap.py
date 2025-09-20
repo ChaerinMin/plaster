@@ -326,6 +326,8 @@ def run_vggt_calibration(args):
 
     print(f"images.shape: {images.shape}, points_3d.shape: {points_3d.shape}")
     
+    scale = img_load_resolution / vggt_fixed_resolution
+    
     for i in range(images.shape[0]):
         mask = np.zeros((img_load_resolution, img_load_resolution), dtype=np.uint8)
 
@@ -337,6 +339,7 @@ def run_vggt_calibration(args):
             # Prepare batched extrinsics/intrinsics for NumPy projector
             extr_b = extrinsic[i][None, ...]        # (1,3,4)
             intr_b = intrinsic[i][None, ...]  # (1,3,3)
+            intr_b[:, :2, :] *= scale  # rescale intrinsics to the original image resolution
             print(f"Image {i}: extr_b shape: {extr_b.shape}, intr_b shape: {intr_b.shape}, pts3d_img shape: {pts3d_img.shape}")
             pts2d_t, pts_cam_t = project_3D_points_np(
                 pts3d_img, extr_b, intr_b, default=0.0, only_points_cam=False
