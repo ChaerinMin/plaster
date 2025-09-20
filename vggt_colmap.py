@@ -420,6 +420,7 @@ def rename_colmap_recons_and_rescale_camera(
             pycamera.params = pred_params
             pycamera.width = real_image_size[0]
             pycamera.height = real_image_size[1]
+            print(f"Rescaled camera {pyimageid} with ratio {resize_ratio}, new size: {pycamera.width}x{pycamera.height}")
 
         if shift_point2d_to_original_res:
             # Also shift the point2D to original resolution
