@@ -338,10 +338,12 @@ def run_vggt_calibration(args):
         if pts3d_img.size != 0:
             # Prepare batched extrinsics/intrinsics for NumPy projector
             extr_b = extrinsic[i][None, ...] # (1,3,4)
-            intr_small = intrinsic[i][None, ...] # (1,3,3)
-            intr_b = get_original_cam_intrinsic(intr_small[0], original_coords[i].cpu().numpy(), img_size=vggt_fixed_resolution)[None, ...]  # (1,3,3)
+            pyimage = reconstruction.images[i]
+            pycamera = reconstruction.cameras[pyimage.camera_id]
+            print(pycamera.params)
+
+            intr_b = intrinsic[i][None, ...]  # (1,3,3)
             # print(f"Image {i}: extr_b shape: {extr_b.shape}, intr_b shape: {intr_b.shape}, pts3d_img shape: {pts3d_img.shape}")
-            print(intr_small)
             print(intr_b)
             pts2d_t, pts_cam_t = project_3D_points_np(
                 pts3d_img, extr_b, intr_b, default=0.0, only_points_cam=False
@@ -397,15 +399,6 @@ def rename_colmap_recons(
 
     return reconstruction
 
-def get_original_cam_intrinsic(intrinsic,original_coords, img_size):
-    real_image_size = original_coords[-2:]
-    resize_ratio = max(real_image_size) / img_size
-    pred_params = intrinsic.copy()
-    pred_params = pred_params * resize_ratio
-    real_pp = real_image_size / 2
-    pred_params[-2:] = real_pp  # center of the image
-    return pred_params
-
 def rename_colmap_recons_and_rescale_camera(
     reconstruction, image_paths, original_coords, img_size, shift_point2d_to_original_res=False, shared_camera=False
 ):
@@ -431,7 +424,7 @@ def rename_colmap_recons_and_rescale_camera(
             pycamera.params = pred_params
             pycamera.width = real_image_size[0]
             pycamera.height = real_image_size[1]
-            print(f"Rescaled camera {pyimageid} with ratio {resize_ratio}, new size: {pycamera.width}x{pycamera.height}")
+            # print(f"Rescaled camera {pyimageid} with ratio {resize_ratio}, new size: {pycamera.width}x{pycamera.height}")
 
         if shift_point2d_to_original_res:
             # Also shift the point2D to original resolution
