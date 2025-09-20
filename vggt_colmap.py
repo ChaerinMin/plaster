@@ -321,8 +321,8 @@ def run_vggt_calibration(args):
     # Save point cloud for fast visualization
     trimesh.PointCloud(points_3d, colors=points_rgb).export(os.path.join(args.scene_dir, "sparse/points.ply"))
     
-    print(f"Saving masked images to {args.scene_dir}/images_masked")
-    os.makedirs(os.path.join(args.scene_dir, "images_masked"), exist_ok=True)
+    print(f"Saving masked images to {args.scene_dir}/images")
+    os.makedirs(os.path.join(args.scene_dir, "images"), exist_ok=True)
 
     print(f"images.shape: {images.shape}, points_3d.shape: {points_3d.shape}")
     
