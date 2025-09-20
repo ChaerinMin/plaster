@@ -218,7 +218,7 @@ def run_vggt_calibration(args):
                 # You can also change the pred_tracks to tracks from any other methods
                 # e.g., from COLMAP, from CoTracker, or by chaining 2D matches from Lightglue/LoFTR.
                 pred_tracks, pred_vis_scores, pred_confs, points_3d, points_rgb = predict_tracks(
-                    images,
+                    images.cpu().numpy(),
                     conf=depth_conf,
                     points_3d=points_3d,
                     masks=None,
