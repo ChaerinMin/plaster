@@ -329,7 +329,7 @@ def run_vggt_calibration(args):
     scale = img_load_resolution / vggt_fixed_resolution
     
     for i in range(images.shape[0]):
-        mask = np.zeros((img_load_resolution, img_load_resolution), dtype=np.uint8)
+        mask = np.zeros((vggt_fixed_resolution, vggt_fixed_resolution), dtype=np.uint8)
 
         # Filter invalid/nans
         valid_pts = np.isfinite(points_3d).all(axis=1)
@@ -357,7 +357,7 @@ def run_vggt_calibration(args):
             if np.any(valid):
                 x = np.rint(x_f[valid]).astype(np.int32)
                 y = np.rint(y_f[valid]).astype(np.int32)
-                in_bounds = (x >= 0) & (y >= 0) & (x < img_load_resolution) & (y < img_load_resolution)
+                in_bounds = (x >= 0) & (y >= 0) & (x < vggt_fixed_resolution) & (y < img_load_resolution)
                 if np.any(in_bounds):
                     mask[y[in_bounds], x[in_bounds]] = 255
         else:
