@@ -328,7 +328,6 @@ def run_vggt_calibration(args):
     
     scale = img_load_resolution / vggt_fixed_resolution
     image_shape = cv2.imread(image_path_list[0]).shape
-    print(f"Image shape: {image_shape}")
     
     for i in range(images.shape[0]):
         mask = np.zeros((image_shape[0], image_shape[1]), dtype=np.uint8)
@@ -381,8 +380,8 @@ def run_vggt_calibration(args):
             print(f"Warning: failed to read image {in_path}; skipping.")
             continue
         masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask)
-        # ok = cv2.imwrite(out_path, masked_bgr)
-        ok = cv2.imwrite(out_path, mask)
+        ok = cv2.imwrite(out_path, masked_bgr)
+        # ok = cv2.imwrite(out_path, mask)
         if not ok:
             print(f"Warning: failed to write masked image {out_path}")
 
