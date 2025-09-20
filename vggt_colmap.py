@@ -336,14 +336,8 @@ def run_vggt_calibration(args):
     original_coords_np = original_coords.cpu().numpy().astype(int)
 
     for i in range(images.shape[0]):
-        if args.use_ba:
-            mask_h = mask_w = img_load_resolution  # intrinsics scaled to 1024 in BA branch
-            intr_b = intrinsic[i][None, ...]
-        else:
-            mask_h = mask_w = vggt_fixed_resolution  # raw intrinsics at 518
-            intr_b = intrinsic[i][None, ...]
-
-        mask = np.zeros((mask_h, mask_w), dtype=np.uint8)
+        intr_b = intrinsic[i][None, ...]
+        mask = np.zeros((vggt_fixed_resolution, vggt_fixed_resolution), dtype=np.uint8)
 
         # Per-image per-pixel 3D points and validity
         pts3d_img = points_3d_full[i].reshape(-1, 3)
@@ -366,7 +360,7 @@ def run_vggt_calibration(args):
             if np.any(valid):
                 x = np.rint(x_f[valid]).astype(np.int32)
                 y = np.rint(y_f[valid]).astype(np.int32)
-                in_bounds = (x >= 0) & (y >= 0) & (x < mask_w) & (y < mask_h)
+                in_bounds = (x >= 0) & (y >= 0) & (x < vggt_fixed_resolution) & (y < vggt_fixed_resolution)
                 if np.any(in_bounds):
                     mask[y[in_bounds], x[in_bounds]] = 255
         else:
@@ -425,7 +419,7 @@ def run_vggt_calibration(args):
 
         masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask_crop)
         # ok = cv2.imwrite(out_path, masked_bgr)
-        ok = cv2.imwrite(out_path, mask_canvas)
+        ok = cv2.imwrite(out_path, mask)
         if not ok:
             print(f"Warning: failed to write masked image {out_path}")
 
