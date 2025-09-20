@@ -378,46 +378,7 @@ def run_vggt_calibration(args):
             print(f"Warning: failed to read image {in_path}; skipping.")
             continue
 
-        # Map mask to 1024x1024 canvas then crop to original image region
-        if mask.shape[0] != img_load_resolution:
-            mask_canvas = cv2.resize(mask, (img_load_resolution, img_load_resolution), interpolation=cv2.INTER_NEAREST)
-        else:
-            mask_canvas = mask
-
-        # Robustly parse original_coords row which may be [x1,y1,x2,y2,width,height]
-        oc = original_coords_np[i]
-        # Ensure we can handle various lengths: 4 (x0,y0,w,h), 6 (x1,y1,x2,y2,w,h), or 4 via x2-x1
-        x0 = int(oc[0])
-        y0 = int(oc[1])
-        w = h = None
-        if len(oc) >= 4:
-            x2 = int(oc[2])
-            y2 = int(oc[3])
-            w_calc = max(1, x2 - x0)
-            h_calc = max(1, y2 - y0)
-        else:
-            w_calc = h_calc = 1
-        if len(oc) >= 6:
-            w = int(oc[4])
-            h = int(oc[5])
-        # Fallbacks if width/height absent or invalid
-        if w is None or w <= 0:
-            w = w_calc
-        if h is None or h <= 0:
-            h = h_calc
-
-        # Clip to canvas in rare cases
-        x0 = max(0, min(x0, img_load_resolution - 1))
-        y0 = max(0, min(y0, img_load_resolution - 1))
-        w = max(1, min(w, img_load_resolution - x0))
-        h = max(1, min(h, img_load_resolution - y0))
-        mask_crop = mask_canvas[y0:y0 + h, x0:x0 + w]
-
-        # Ensure mask size matches the original image size (should already match)
-        if img_bgr.shape[0] != h or img_bgr.shape[1] != w:
-            mask_crop = cv2.resize(mask_crop, (img_bgr.shape[1], img_bgr.shape[0]), interpolation=cv2.INTER_NEAREST)
-
-        masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask_crop)
+        # masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask_crop)
         # ok = cv2.imwrite(out_path, masked_bgr)
         ok = cv2.imwrite(out_path, mask)
         if not ok:
