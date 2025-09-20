@@ -337,6 +337,7 @@ def run_vggt_calibration(args):
 
     for i in range(images.shape[0]):
         intr_b = intrinsic[i][None, ...]
+        print(intr_b)
         mask = np.zeros((vggt_fixed_resolution, vggt_fixed_resolution), dtype=np.uint8)
 
         # Per-image per-pixel 3D points and validity
