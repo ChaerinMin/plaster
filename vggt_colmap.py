@@ -381,25 +381,16 @@ def run_vggt_calibration(args):
         # Create BGRA image with mask in alpha channel
         img_bgra = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2BGRA)
         img_bgra[:, :, 3] = mask
-        out_path = os.path.join(args.scene_dir, "images_masked", os.path.basename(in_path) + '.png')
+        out_path = os.path.join(args.scene_dir, "images", os.path.basename(in_path) + '.png')
         ok = cv2.imwrite(out_path, img_bgra)
         # ok = cv2.imwrite(out_path, mask)
         if not ok:
             print(f"Warning: failed to write masked image {out_path}")
+        else:
+            # Change file name in reconstruction to .png
+            pyimage.name = base_image_path_list[i] + '.png'
 
     return True
-
-def rename_colmap_recons(
-    reconstruction, image_paths):
-
-    for pyimageid in reconstruction.images:
-        # Reshaped the padded&resized image to the original size
-        # Rename the images to the original names
-        pyimage = reconstruction.images[pyimageid]
-        pycamera = reconstruction.cameras[pyimage.camera_id]
-        pyimage.name = image_paths[pyimageid - 1]
-
-    return reconstruction
 
 def rename_colmap_recons_and_rescale_camera(
     reconstruction, image_paths, original_coords, img_size, shift_point2d_to_original_res=False, shared_camera=False
@@ -411,7 +402,7 @@ def rename_colmap_recons_and_rescale_camera(
         # Rename the images to the original names
         pyimage = reconstruction.images[pyimageid]
         pycamera = reconstruction.cameras[pyimage.camera_id]
-        pyimage.name = image_paths[pyimageid - 1]
+        pyimage.name = image_paths[pyimageid - 1] + '.png'
 
         if rescale_camera:
             # Rescale the camera parameters
