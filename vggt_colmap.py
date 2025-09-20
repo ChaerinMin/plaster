@@ -343,8 +343,10 @@ def run_vggt_calibration(args):
             print(pycamera.params)
 
             intr_b = intrinsic[i][None, ...]  # (1,3,3)
+            intr_b = make_intr_b_from_pycamera(pycamera)
             # print(f"Image {i}: extr_b shape: {extr_b.shape}, intr_b shape: {intr_b.shape}, pts3d_img shape: {pts3d_img.shape}")
             print(intr_b)
+            
             pts2d_t, pts_cam_t = project_3D_points_np(
                 pts3d_img, extr_b, intr_b, default=0.0, only_points_cam=False
             )
@@ -441,31 +443,17 @@ def rename_colmap_recons_and_rescale_camera(
     return reconstruction
 
 
-"""
-VGGT Runner Script
-=================
-
-A script to run the VGGT model for 3D reconstruction from image sequences.
-
-Directory Structure
-------------------
-Input:
-    input_folder/
-    └── images/            # Source images for reconstruction
-
-Output:
-    output_folder/
-    ├── images/
-    ├── sparse/           # Reconstruction results
-    │   ├── cameras.bin   # Camera parameters (COLMAP format)
-    │   ├── images.bin    # Pose for each image (COLMAP format)
-    │   ├── points3D.bin  # 3D points (COLMAP format)
-    │   └── points.ply    # Point cloud visualization file 
-    └── visuals/          # Visualization outputs TODO
-
-Key Features
------------
-• Dual-mode Support: Run reconstructions using either VGGT or VGGT+BA
-• Resolution Preservation: Maintains original image resolution in camera parameters and tracks
-• COLMAP Compatibility: Exports results in standard COLMAP sparse reconstruction format
-"""
+def make_intr_b_from_pycamera(pycamera):
+    if pycamera.model in ["SIMPLE_PINHOLE", "SIMPLE_RADIAL"]:
+        fx = fy = pycamera.params[0]
+        cx = pycamera.params[1]
+        cy = pycamera.params[2]
+    elif pycamera.model in ["PINHOLE", "RADIAL"]:
+        fx = pycamera.params[0]
+        fy = pycamera.params[1]
+        cx = pycamera.params[2]
+        cy = pycamera.params[3]
+    else:
+        raise NotImplementedError(f"Camera model {pycamera.model} not supported yet")
+    intr_b = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])[None, ...]  # (1,3,3)
+    return intr_b
