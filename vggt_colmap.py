@@ -407,7 +407,8 @@ def run_vggt_calibration(args):
             mask_crop = cv2.resize(mask_crop, (img_bgr.shape[1], img_bgr.shape[0]), interpolation=cv2.INTER_NEAREST)
 
         masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask_crop)
-        ok = cv2.imwrite(out_path, masked_bgr)
+        # ok = cv2.imwrite(out_path, masked_bgr)
+        ok = cv2.imwrite(out_path, mask_crop)
         if not ok:
             print(f"Warning: failed to write masked image {out_path}")
 
