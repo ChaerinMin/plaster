@@ -329,7 +329,7 @@ def run_vggt_calibration(args):
     print(f"images.shape: {images.shape}, points_3d_full.shape: {points_3d_full.shape}")
 
     # Splat kernel (odd): dilate mask to cover a small neighborhood around projected points
-    splat_kernel = getattr(args, "splat_kernel", 5)
+    splat_kernel = getattr(args, "splat_kernel", 1)
     if splat_kernel < 1:
         splat_kernel = 1
     if splat_kernel % 2 == 0:
