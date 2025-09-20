@@ -329,7 +329,7 @@ def run_vggt_calibration(args):
     print(f"images.shape: {images.shape}, points_3d_full.shape: {points_3d_full.shape}")
 
     # Splat kernel (odd): dilate mask to cover a small neighborhood around projected points
-    splat_kernel = getattr(args, "splat_kernel", 3)
+    splat_kernel = getattr(args, "splat_kernel", 5)
     if splat_kernel < 1:
         splat_kernel = 1
     if splat_kernel % 2 == 0:
@@ -344,7 +344,7 @@ def run_vggt_calibration(args):
             mask_h = mask_w = vggt_fixed_resolution  # raw intrinsics at 518
             intr_b = intrinsic[i][None, ...]
 
-        mask = np.zeros((vggt_fixed_resolution, vggt_fixed_resolution), dtype=np.uint8)
+        mask = np.zeros((mask_h, mask_w), dtype=np.uint8)
 
         # Per-image per-pixel 3D points and validity
         pts3d_img = points_3d_full[i].reshape(-1, 3)
