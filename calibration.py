@@ -40,6 +40,7 @@ import json
 from primer.helpers import undistort_images
 import cv2
 import argparse
+import traceback
 
 # Check if VGGT is install for stage3 calibration
 try:
@@ -409,4 +410,18 @@ def calibrate_camera_vggt_from_primer(frames: Any,
                 # "num_registered_images": best_recon.num_frames()
                 }
     except Exception as e:
-        return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
+        # Verbose logging with traceback and line numbers
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tb_list = traceback.extract_tb(exc_tb)
+        formatted_tb = ''.join(traceback.format_list(tb_list))
+        final_frame = tb_list[-1] if tb_list else None
+        if final_frame:
+            print(
+                f"Error processing multisequence '{ms.get('name','UNKNOWN')}': {exc_type.__name__}: {e}\n"
+                f"  At {final_frame.filename}:{final_frame.lineno} in {final_frame.name}\n"
+                f"  Code: {final_frame.line}"
+            )
+        else:
+            print(f"Error processing multisequence '{ms.get('name','UNKNOWN')}': {exc_type.__name__}: {e}")
+        print("Full traceback (most recent call last):")
+        print(formatted_tb.rstrip())
