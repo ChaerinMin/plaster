@@ -343,6 +343,7 @@ def run_vggt_calibration(args):
             print(pycamera.params)
 
             intr_b = intrinsic[i][None, ...]  # (1,3,3)
+            print(intr_b)
             intr_b = make_intr_b_from_pycamera(pycamera)
             # print(f"Image {i}: extr_b shape: {extr_b.shape}, intr_b shape: {intr_b.shape}, pts3d_img shape: {pts3d_img.shape}")
             print(intr_b)
@@ -444,11 +445,11 @@ def rename_colmap_recons_and_rescale_camera(
 
 
 def make_intr_b_from_pycamera(pycamera):
-    if pycamera.model in ["SIMPLE_PINHOLE", "SIMPLE_RADIAL"]:
+    if pycamera.model in [pycolmap.CameraModelId.SIMPLE_PINHOLE, pycolmap.CameraModelId.SIMPLE_RADIAL]:
         fx = fy = pycamera.params[0]
         cx = pycamera.params[1]
         cy = pycamera.params[2]
-    elif pycamera.model in ["PINHOLE", "RADIAL"]:
+    elif pycamera.model in [pycolmap.CameraModelId.PINHOLE, pycolmap.CameraModelId.RADIAL]:
         fx = pycamera.params[0]
         fy = pycamera.params[1]
         cx = pycamera.params[2]
