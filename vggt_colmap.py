@@ -336,6 +336,9 @@ def run_vggt_calibration(args):
         splat_kernel += 1
     splat_se = cv2.getStructuringElement(cv2.MORPH_RECT, (splat_kernel, splat_kernel))
 
+    # Original coordinates for cropping back from padded square (1024) to native WxH
+    original_coords_np = original_coords.cpu().numpy().astype(int)
+
     for i in range(images.shape[0]):
         if args.use_ba:
             mask_h = mask_w = img_load_resolution  # intrinsics scaled to 1024 in BA branch
@@ -385,9 +388,25 @@ def run_vggt_calibration(args):
             print(f"Warning: failed to read image {in_path}; skipping.")
             continue
 
-        # Resize mask to original image size using nearest neighbor to preserve binary mask
-        mask_resized = cv2.resize(mask, (img_bgr.shape[1], img_bgr.shape[0]), interpolation=cv2.INTER_NEAREST)
-        masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask_resized)
+        # Map mask to 1024x1024 canvas then crop to original image region
+        if mask.shape[0] != img_load_resolution:
+            mask_canvas = cv2.resize(mask, (img_load_resolution, img_load_resolution), interpolation=cv2.INTER_NEAREST)
+        else:
+            mask_canvas = mask
+
+        x0, y0, w, h = original_coords_np[i]
+        # Clip to canvas in rare cases
+        x0 = max(0, min(x0, img_load_resolution - 1))
+        y0 = max(0, min(y0, img_load_resolution - 1))
+        w = max(1, min(w, img_load_resolution - x0))
+        h = max(1, min(h, img_load_resolution - y0))
+        mask_crop = mask_canvas[y0:y0 + h, x0:x0 + w]
+
+        # Ensure mask size matches the original image size (should already match)
+        if img_bgr.shape[0] != h or img_bgr.shape[1] != w:
+            mask_crop = cv2.resize(mask_crop, (img_bgr.shape[1], img_bgr.shape[0]), interpolation=cv2.INTER_NEAREST)
+
+        masked_bgr = cv2.bitwise_and(img_bgr, img_bgr, mask=mask_crop)
         ok = cv2.imwrite(out_path, masked_bgr)
         if not ok:
             print(f"Warning: failed to write masked image {out_path}")
