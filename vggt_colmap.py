@@ -371,7 +371,7 @@ def run_vggt_calibration(args):
         kernel_size = 11
         mask = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size)))
         # Downsize and upsize again to remove small holes
-        mask = cv2.resize(mask, (image_shape[1]//2, image_shape[0]//2), interpolation=cv2.INTER_NEAREST)
+        mask = cv2.resize(mask, (image_shape[1]//4, image_shape[0]//4), interpolation=cv2.INTER_NEAREST)
         mask = cv2.resize(mask, (image_shape[1], image_shape[0]), interpolation=cv2.INTER_NEAREST)
 
         img_bgr = cv2.imread(in_path, cv2.IMREAD_COLOR)
