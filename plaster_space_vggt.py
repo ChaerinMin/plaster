@@ -52,7 +52,7 @@ if __name__ == "__main__":
     if not os.path.exists(source_plaster_path):
         print(f"Plaster file not found: {source_plaster_path}")
         exit(1)
-    source_plaster = json.load(open(source_plaster_path, 'r'))
+    source_plaster = json.load(open(source_plaster_path, 'r'))    
 
     # Now let's use primer to get the data for spatial sensor calibration
     double_force_reserialize = args.force_reserialize
@@ -72,6 +72,11 @@ if __name__ == "__main__":
                 continue
             calib_dir = os.path.join(args.source, day, ms["name"], "calib")
             calib_dir_vggt = os.path.join(args.source, day, ms["name"], "calib/stage3")
+            # Check if COLMAP calibration is done in stage 1 and 2
+            if not os.path.exists(os.path.join(args.source, day, ms["name"], "calib/stage2")):
+                print(f"ERROR: Please perform COLMAP calibration before running plaster VGGT calibration.")
+                exit(1)
+
             if os.path.exists(calib_dir_vggt) and double_force_reserialize:
                 print(f"Removing existing calibration directory: {calib_dir_vggt}")
                 shutil.rmtree(calib_dir_vggt)
