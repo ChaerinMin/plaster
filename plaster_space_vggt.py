@@ -38,6 +38,8 @@ vg_group.add_argument("--max_query_pts", type=int, default=4096, help="Maximum n
 vg_group.add_argument(
     "--fine_tracking", action="store_true", default=False, help="Use fine tracking (slower but more accurate)"
 )
+vg_group.add_argument("--max-3d-points", type=int, default=1000000, help="Maximum number of 3D points to use")
+vg_group.add_argument("--dilation-kernerl-size", type=int, default=13, help="Dilation kernel size for mask refinement")
 
 if __name__ == "__main__":
     args = parser.parse_args()

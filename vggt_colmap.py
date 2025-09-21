@@ -266,7 +266,7 @@ def run_vggt_calibration(args):
         print('Depth Threshold with value (NOT YET IMPLEMENTED): ', depth_threshold_val)
         print('Min and Max of depth: ', np.min(depth_map), np.max(depth_map))
 
-        max_points_for_colmap = 200000  # randomly sample 3D points
+        max_points_for_colmap = args.max_3d_points  # randomly sample 3D points
         shared_camera = False  # in the feedforward manner, we do not support shared camera
         camera_type = "PINHOLE"  # in the feedforward manner, we only support PINHOLE camera
 
@@ -368,7 +368,7 @@ def run_vggt_calibration(args):
         # # Load original image (BGR) and apply mask
         in_path = image_path_list[i]        
         # We are faking point splatting by dilation
-        kernel_size = 11
+        kernel_size = args.dilation_kernerl_size
         mask = cv2.dilate(mask, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size)))
         # Downsize and upsize again to remove small holes
         mask = cv2.resize(mask, (image_shape[1]//4, image_shape[0]//4), interpolation=cv2.INTER_NEAREST)
