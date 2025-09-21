@@ -75,7 +75,7 @@ if __name__ == "__main__":
             # Check if COLMAP calibration is done in stage 1 and 2
             if not os.path.exists(os.path.join(args.source, day, ms["name"], "calib/stage2")):
                 print(f"ERROR: Please perform COLMAP calibration before running plaster VGGT calibration.")
-                exit(1)
+                continue
 
             if os.path.exists(calib_dir_vggt) and double_force_reserialize:
                 print(f"Removing existing calibration directory: {calib_dir_vggt}")
