@@ -9,6 +9,7 @@ import vggt_colmap
 parser = argparse.ArgumentParser(description="Mask Generation Test Script")
 
 parser.add_argument("--conf-thres-percent", type=float, default=50.0, help="Confidence threshold value for depth filtering in percent.")
+parser.add_argument("--depth-thres-percent", type=float, default=0.0, help="Depth threshold value for depth filtering in percent.")
 
 
 # VGGT COLMAP arguments. Used only if VGGT is available. Taken from https://raw.githubusercontent.com/facebookresearch/vggt/refs/heads/main/demo_colmap.py
