@@ -8,6 +8,9 @@ import vggt_colmap
 
 parser = argparse.ArgumentParser(description="Mask Generation Test Script")
 
+parser.add_argument("--conf-thres-percent", type=float, default=50.0, help="Confidence threshold value for depth filtering in percent.")
+
+
 # VGGT COLMAP arguments. Used only if VGGT is available. Taken from https://raw.githubusercontent.com/facebookresearch/vggt/refs/heads/main/demo_colmap.py
 vg_group = parser.add_argument_group("VGGT COLMAP")
 vg_group.add_argument("--scene_dir", type=str, required=False, help="Directory containing the scene images", default=None)
@@ -26,7 +29,7 @@ vg_group.add_argument(
     "--fine_tracking", action="store_true", default=False, help="Use fine tracking (slower but more accurate)"
 )
 vg_group.add_argument("--max-3d-points", type=int, default=1000000, help="Maximum number of 3D points to use")
-vg_group.add_argument("--dilation-kernerl-size", type=int, default=13, help="Dilation kernel size for mask refinement")
+vg_group.add_argument("--dilation-kernel-size", type=int, default=13, help="Dilation kernel size for mask refinement")
 
 if __name__ == "__main__":
     args = parser.parse_args()
