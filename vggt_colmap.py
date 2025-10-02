@@ -248,6 +248,7 @@ def run_vggt_calibration(args):
             shared_camera=shared_camera,
             camera_type=args.camera_type,
             points_rgb=points_rgb,
+            min_inlier_per_frame=10
         )
 
         if reconstruction is None:
