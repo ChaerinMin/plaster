@@ -233,7 +233,8 @@ def run_vggt_calibration(args):
             
         # rescale the intrinsic matrix from 518 to 1024
         intrinsic[:, :2, :] *= scale
-        track_mask = pred_vis_scores > args.vis_thresh
+        # track_mask = pred_vis_scores > args.vis_thresh
+        track_mask = None
 
         # TODO: radial distortion, iterative BA, masks
         reconstruction, valid_track_mask = batch_np_matrix_to_pycolmap(
