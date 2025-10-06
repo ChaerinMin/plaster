@@ -374,7 +374,6 @@ def run_vggt_calibration(args):
         # Create BGRA image with mask in alpha channel
         img_bgra = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2BGRA)
         img_bgra[:, :, 3] = mask
-        img_bgra[:, :, :3][mask == 0] = 0
         out_path = os.path.join(args.scene_dir, "images", os.path.basename(in_path) + '.png')
         ok = cv2.imwrite(out_path, img_bgra)
         # ok = cv2.imwrite(out_path, mask)
