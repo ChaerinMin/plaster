@@ -381,9 +381,7 @@ def run_vggt_calibration(args):
             print(f"Warning: failed to write masked image {out_path}")
         else:
             # Change file name in reconstruction to .png
-            # pyimage.name = base_image_path_list[i] + '.png'
-            # TEMP: PASS
-            pass
+            pyimage.name = base_image_path_list[i] + '.png'
                     
     print(f"Saving reconstruction to {args.scene_dir}/sparse")
     sparse_reconstruction_dir = os.path.join(args.scene_dir, "sparse")
