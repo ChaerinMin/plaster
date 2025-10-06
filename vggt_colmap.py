@@ -235,9 +235,10 @@ def run_vggt_calibration(args):
             
         # rescale the intrinsic matrix from 518 to 1024
         intrinsic[:, :2, :] *= scale
-        track_mask = pred_vis_scores > args.vis_thresh
+        vis_thresh_val = np.percentile(pred_vis_scores, 10)
+        track_mask = pred_vis_scores > vis_thresh_val
         print(f'Min/max of pred_vis_scores: {pred_vis_scores.min()}/{pred_vis_scores.max()}')
-        print(f'vis_thresh: {args.vis_thresh}')
+        print(f'vis_thresh: {vis_thresh_val}, (args.vis_thresh: {args.vis_thresh})')
         # track_mask = None
 
         # TODO: radial distortion, iterative BA, masks
