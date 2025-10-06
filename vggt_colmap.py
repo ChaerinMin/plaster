@@ -235,7 +235,7 @@ def run_vggt_calibration(args):
             
         # rescale the intrinsic matrix from 518 to 1024
         intrinsic[:, :2, :] *= scale
-        vis_thresh_val = np.percentile(pred_vis_scores, 10)
+        vis_thresh_val = np.percentile(pred_vis_scores, 1)
         track_mask = pred_vis_scores > vis_thresh_val
         print(f'Min/max of pred_vis_scores: {pred_vis_scores.min()}/{pred_vis_scores.max()}')
         print(f'vis_thresh: {vis_thresh_val}, (args.vis_thresh: {args.vis_thresh})')
