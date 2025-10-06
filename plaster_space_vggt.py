@@ -40,6 +40,7 @@ vg_group.add_argument(
 )
 vg_group.add_argument("--max-3d-points", type=int, default=1000000, help="Maximum number of 3D points to use")
 vg_group.add_argument("--dilation-kernel-size", type=int, default=13, help="Dilation kernel size for mask refinement")
+vg_group.add_argument("--min-inlier-per-frame", type=int, default=20, help="Minimum inliers per frame to consider it valid")
 
 if __name__ == "__main__":
     args = parser.parse_args()
