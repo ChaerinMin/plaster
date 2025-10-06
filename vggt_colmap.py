@@ -227,8 +227,8 @@ def run_vggt_calibration(args):
                     query_frame_num=args.query_frame_num,
                     keypoint_extractor="aliked+sp",
                     fine_tracking=args.fine_tracking,
-                    # complete_non_vis=False,
-                    complete_non_vis=True,
+                    complete_non_vis=False,
+                    # complete_non_vis=True, # VGGT+BA debug
                     conf_thresh_percent=args.conf_thres_percent,
                 )
                 
@@ -236,11 +236,8 @@ def run_vggt_calibration(args):
             
         # rescale the intrinsic matrix from 518 to 1024
         # intrinsic[:, :2, :] *= scale # Testing
-        vis_thresh_val = 0 #np.percentile(pred_vis_scores, 0.001)
+        vis_thresh_val = args.vis_thresh
         track_mask = pred_vis_scores > vis_thresh_val
-        print(f'Min/max of pred_vis_scores: {pred_vis_scores.min()}/{pred_vis_scores.max()}')
-        print(f'vis_thresh: {vis_thresh_val}, (args.vis_thresh: {args.vis_thresh})')
-        # track_mask = None
 
         # TODO: radial distortion, iterative BA, masks
         reconstruction, valid_track_mask = batch_np_matrix_to_pycolmap(
@@ -264,7 +261,7 @@ def run_vggt_calibration(args):
         ba_options = pycolmap.BundleAdjustmentOptions()
         pycolmap.bundle_adjustment(reconstruction, ba_options)
 
-        reconstruction_resolution = img_load_resolution
+        reconstruction_resolution = vggt_fixed_resolution
     else:
         conf_threshold_val = np.percentile(depth_conf, args.conf_thres_percent)
         print('Threshold with value: ', conf_threshold_val)
