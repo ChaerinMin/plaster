@@ -314,9 +314,6 @@ def run_vggt_calibration(args):
         shift_point2d_to_original_res=True,
         shared_camera=shared_camera,
     )   
-
-    # Save point cloud for fast visualization
-    trimesh.PointCloud(points_3d, colors=points_rgb).export(os.path.join(args.scene_dir, "sparse/points.ply"))
     
     print(f"Saving masked images to {args.scene_dir}/images")
     os.makedirs(os.path.join(args.scene_dir, "images"), exist_ok=True)
@@ -391,6 +388,9 @@ def run_vggt_calibration(args):
     sparse_reconstruction_dir = os.path.join(args.scene_dir, "sparse")
     os.makedirs(sparse_reconstruction_dir, exist_ok=True)
     reconstruction.write(sparse_reconstruction_dir)
+    
+    # Save point cloud for fast visualization
+    trimesh.PointCloud(points_3d, colors=points_rgb).export(os.path.join(args.scene_dir, "sparse/points.ply"))
 
     return True
 
