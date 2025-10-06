@@ -227,7 +227,8 @@ def run_vggt_calibration(args):
                     query_frame_num=args.query_frame_num,
                     keypoint_extractor="aliked+sp",
                     fine_tracking=args.fine_tracking,
-                    complete_non_vis=False,
+                    # complete_non_vis=False,
+                    complete_non_vis=True,
                     conf_thresh_percent=args.conf_thres_percent,
                 )
                 
