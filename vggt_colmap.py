@@ -206,7 +206,6 @@ def run_vggt_calibration(args):
     if args.use_ba:
         print('WARNING: BA might run out of memory. Try without --use_ba if that happens.')
         image_size = np.array(images.shape[-2:])
-        scale = img_load_resolution / vggt_fixed_resolution
         shared_camera = args.shared_camera
 
         with torch.no_grad():
@@ -234,8 +233,6 @@ def run_vggt_calibration(args):
                 
                 torch.cuda.empty_cache()
             
-        # rescale the intrinsic matrix from 518 to 1024
-        # intrinsic[:, :2, :] *= scale # Testing
         vis_thresh_val = args.vis_thresh
         track_mask = pred_vis_scores > vis_thresh_val
 
@@ -318,11 +315,6 @@ def run_vggt_calibration(args):
         shared_camera=shared_camera,
     )   
 
-    print(f"Saving reconstruction to {args.scene_dir}/sparse")
-    sparse_reconstruction_dir = os.path.join(args.scene_dir, "sparse")
-    os.makedirs(sparse_reconstruction_dir, exist_ok=True)
-    reconstruction.write(sparse_reconstruction_dir)
-
     # Save point cloud for fast visualization
     trimesh.PointCloud(points_3d, colors=points_rgb).export(os.path.join(args.scene_dir, "sparse/points.ply"))
     
@@ -394,6 +386,11 @@ def run_vggt_calibration(args):
         else:
             # Change file name in reconstruction to .png
             pyimage.name = base_image_path_list[i] + '.png'
+            
+    print(f"Saving reconstruction to {args.scene_dir}/sparse")
+    sparse_reconstruction_dir = os.path.join(args.scene_dir, "sparse")
+    os.makedirs(sparse_reconstruction_dir, exist_ok=True)
+    reconstruction.write(sparse_reconstruction_dir)
 
     return True
 
