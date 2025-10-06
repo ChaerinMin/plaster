@@ -220,8 +220,7 @@ def run_vggt_calibration(args):
                 # e.g., from COLMAP, from CoTracker, or by chaining 2D matches from Lightglue/LoFTR.
                 pred_tracks, pred_vis_scores, pred_confs, points_3d, points_rgb = predict_tracks(
                     images,
-                    # conf=depth_conf,
-                    conf=None,
+                    conf=depth_conf,
                     points_3d=points_3d,
                     masks=None,
                     max_query_pts=args.max_query_pts,
