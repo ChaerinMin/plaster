@@ -320,7 +320,6 @@ def run_vggt_calibration(args):
 
     print(f"images.shape: {images.shape}, points_3d.shape: {points_3d.shape}")
     
-    scale = img_load_resolution / vggt_fixed_resolution
     image_shape = cv2.imread(image_path_list[0]).shape
     
     for i in range(images.shape[0]):
@@ -382,8 +381,10 @@ def run_vggt_calibration(args):
             print(f"Warning: failed to write masked image {out_path}")
         else:
             # Change file name in reconstruction to .png
-            pyimage.name = base_image_path_list[i] + '.png'
-            
+            # pyimage.name = base_image_path_list[i] + '.png'
+            # TEMP: PASS
+            pass
+                    
     print(f"Saving reconstruction to {args.scene_dir}/sparse")
     sparse_reconstruction_dir = os.path.join(args.scene_dir, "sparse")
     os.makedirs(sparse_reconstruction_dir, exist_ok=True)
