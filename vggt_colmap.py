@@ -235,7 +235,7 @@ def run_vggt_calibration(args):
                 torch.cuda.empty_cache()
             
         # rescale the intrinsic matrix from 518 to 1024
-        intrinsic[:, :2, :] *= scale
+        # intrinsic[:, :2, :] *= scale # Testing
         vis_thresh_val = 0 #np.percentile(pred_vis_scores, 0.001)
         track_mask = pred_vis_scores > vis_thresh_val
         print(f'Min/max of pred_vis_scores: {pred_vis_scores.min()}/{pred_vis_scores.max()}')
