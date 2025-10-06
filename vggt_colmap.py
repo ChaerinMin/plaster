@@ -229,6 +229,7 @@ def run_vggt_calibration(args):
                     keypoint_extractor="aliked+sp",
                     fine_tracking=args.fine_tracking,
                     complete_non_vis=False,
+                    conf_thresh_percent=args.conf_thres_percent,
                 )
                 
                 torch.cuda.empty_cache()
