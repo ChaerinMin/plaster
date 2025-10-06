@@ -217,14 +217,14 @@ def run_vggt_calibration(args):
 
                 # You can also change the pred_tracks to tracks from any other methods
                 # e.g., from COLMAP, from CoTracker, or by chaining 2D matches from Lightglue/LoFTR.
-                pred_tracks, pred_vis_scores, pred_confs, points_3d_ba, points_rgb = predict_tracks(
+                pred_tracks, pred_vis_scores, pred_confs, points_3d, points_rgb = predict_tracks(
                     images,
                     conf=depth_conf,
                     points_3d=points_3d,
                     masks=None,
                     max_query_pts=args.max_query_pts,
                     query_frame_num=args.query_frame_num,
-                    keypoint_extractor="aliked+sp",
+                    keypoint_extractor="aliked+sp+sift",
                     fine_tracking=args.fine_tracking,
                     complete_non_vis=False,
                     # complete_non_vis=True, # VGGT+BA debug
