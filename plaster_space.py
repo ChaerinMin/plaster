@@ -22,6 +22,11 @@ parser.add_argument("--min-num-matches", type=int, default=15, help="Minimum num
 parser.add_argument("--conf-thres-percent", type=float, default=50.0, help="Confidence threshold value for depth filtering in percent.")
 parser.add_argument("--wb-temp", type=int, default=4600, help="White balance temperature for image harmonization.")
 
+# vggt
+parser.add_argument("--scene_dir", type=str, required=False, help="Directory containing the scene images", default=None)
+parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
+parser.add_argument("--use_ba", action="store_true", default=False, help="Use BA for reconstruction")
+
 if __name__ == "__main__":
     args = parser.parse_args()
     if not args.source:
