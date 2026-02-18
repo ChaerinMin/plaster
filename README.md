@@ -37,5 +37,6 @@ Note that VGGT Torch dependencies are not compatible with `plaster` and `primer`
 ## Usage
 
 ```bash
-python plaster_space.py -s /path/to/brics -d yyyy-mm-dd
+python plaster_time.py -s /oscar/data/ssrinath/public/brics-mini
+python plaster_space.py -s /oscar/data/ssrinath/brics/non-pii/brics-mini -o "/oscar/data/ssrinath/public/brics-mini" -d yyyy-mm-dd
 ```

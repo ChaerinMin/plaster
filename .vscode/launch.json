@@ -1,0 +1,35 @@
+{
+    // conda: zeronvs
+    "configurations":[
+        {
+            "name": "Plaster space",
+            "type": "python",
+            "request": "launch",
+            "program": "plaster_space.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env":{
+                "CUDA_VISIBLE_DEVICES": "0"
+            },
+            "args":[
+                "-s", "/oscar/data/ssrinath/brics/non-pii/brics-studio",
+                "-o", "/oscar/data/ssrinath/public/brics-studio",
+                "-d", "2025-03-30",
+            ]
+        },
+        {
+            "name": "Plaster time",
+            "type": "python",
+            "request": "launch",
+            "program": "plaster_time.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env":{
+                "CUDA_VISIBLE_DEVICES": "0"
+            },
+            "args":[
+                "-s", "/oscar/data/ssrinath/public/brics-mini",
+            ]
+        }
+    ]
+}

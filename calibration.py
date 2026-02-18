@@ -325,6 +325,24 @@ def calibrate_camera_from_primer(frames: Any,
 
         best_recon.write(output_dir) # Write the best reconstruction to the top level directory
 
+        # compute confidence
+        image_scores = {}
+        for img_id, img in best_recon.images.items():
+            valid_3d_points = 0
+            if hasattr(img, 'points2D'):
+                for p2d in img.points2D:
+                    if p2d.has_point3D():
+                        valid_3d_points += 1
+            score_data = {
+                "image_name": img.name,
+                "num_visible_3D_points": valid_3d_points,
+            }
+            image_scores[img.name] = score_data
+        confidence_path = os.path.join(output_dir, "image_confidence.json")
+        with open(confidence_path, "w") as f:
+            json.dump(image_scores, f, indent=4)
+        print(f"Saved {confidence_path}")
+
         final_cam_params["stage2_model"] = str(stage2_camera_model)
         final_cam_params["stage2_camera_mode"] = str(stage2_camera_mode)
         for cam in best_recon.cameras.values():
@@ -353,23 +371,25 @@ def calibrate_camera_from_primer(frames: Any,
             
     except Exception as e:
         print(f"Stage 2 ({stage2_camera_model} and {str(stage2_camera_mode)}) calibration failed: {e}. Not proceeding to Stage 3. Exiting.")
+        print(e)
+        sys.exit(1)  # the non-rigid-hoi project assumes stage2.
         return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
         
-    try:
-        if(VGGT_FOUND):
-            print(f"VGGT Stage 3 ({stage3_camera_model} and {str(stage3_camera_mode)}) calibration started.")
-            if args.scene_dir is None:
-                args.scene_dir = stage3_dir
-            vggt_colmap.run_vggt_calibration(args)
+    # try:
+    #     if(VGGT_FOUND):
+    #         print(f"VGGT Stage 3 ({stage3_camera_model} and {str(stage3_camera_mode)}) calibration started.")
+    #         if args.scene_dir is None:
+    #             args.scene_dir = stage3_dir
+    #         vggt_colmap.run_vggt_calibration(args)
 
-        return {"success": True,
-                "message": f"Calibration succeeded with {best_recon.num_frames()} images",
-                "output_dir": output_dir,
-                # "camera_params": camera_params_out,
-                # "image_poses": image_poses,
-                "num_registered_images": best_recon.num_frames()}
-    except Exception as e:
-        return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
+    #     return {"success": True,
+    #             "message": f"Calibration succeeded with {best_recon.num_frames()} images",
+    #             "output_dir": output_dir,
+    #             # "camera_params": camera_params_out,
+    #             # "image_poses": image_poses,
+    #             "num_registered_images": best_recon.num_frames()}
+    # except Exception as e:
+    #     return {"success": False, "message": f"Exception: {e}", "output_dir": output_dir}
     
     
 def calibrate_camera_vggt_from_primer(frames: Any,

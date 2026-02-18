@@ -14,6 +14,7 @@ import pycolmap
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
 parser.add_argument("-s", "--source", type=str, help="Path to the source directory", required=True)
 parser.add_argument("-d", "--day", type=str, help="If looking for a specific day.", required=False, default=None)
+parser.add_argument("-o", "--output", type=str, help="Path to save calib data", required=False)
 parser.add_argument("--ms", type=str, help="If looking for a specific multisequence.", required=False, default=None)
 parser.add_argument("--time-thresh", type=float, default=20, help="Time sync threshold in ms.")
 parser.add_argument("-f", "--force-reserialize", action="store_true", help="Force reserialization of the source")
@@ -65,7 +66,10 @@ if __name__ == "__main__":
         for ms in day_plaster["multisequences"]:
             if args.ms and ms["name"] != args.ms:
                 continue
-            calib_dir = os.path.join(args.source, day, ms["name"], "calib")
+            if args.output:
+                calib_dir = os.path.join(args.output, day, ms["name"], "calib")
+            else:
+                calib_dir = os.path.join(args.source, day, ms["name"], "calib")
             if os.path.exists(calib_dir) and double_force_reserialize:
                 print(f"Removing existing calibration directory: {calib_dir}")
                 shutil.rmtree(calib_dir)
