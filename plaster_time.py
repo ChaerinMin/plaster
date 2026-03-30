@@ -7,6 +7,8 @@ from datetime import datetime
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
 parser.add_argument("-s", "--source", type=str, help="Path to the source directory")
+parser.add_argument("-o", "--output", type=str, help="Path to save plaster.json (defaults to source directory)", default=None)
+parser.add_argument("-d", "--day", type=str, help="If looking for a specific day.", required=False, default=None)
 parser.add_argument("-f", "--force-reserialize", action="store_true", help="Force reserialization of the source")
 
 if __name__ == "__main__":
@@ -15,10 +17,15 @@ if __name__ == "__main__":
         parser.print_help()
         exit(1)
 
+    if args.day is not None:
+        if not os.path.exists(os.path.join(args.source, args.day)):
+            print(f"Day directory not found: {os.path.join(args.source, args.day)}")
+            exit(1)
+
     today = datetime.now().strftime('%Y-%m-%d') # Get today's date in YYYY-MM-DD format
-    
+
     # First, cache the source directory and plaster.json
-    source_instance = source.Source(args.source, force_reserialize=args.force_reserialize)
+    source_instance = source.Source(args.source, force_reserialize=args.force_reserialize, output_path=args.output, day=args.day)
 
     # Time calibration: Recursively find all sensor directories in source-->day-->sensor. Then run time_cache
     day_dirs = [os.path.join(day.source_path, day.date) for day in source_instance.days]

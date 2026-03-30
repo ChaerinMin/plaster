@@ -116,12 +116,15 @@ class Sensor:
     """
     A class representing a sensor that captures data.
     """
-    def __init__(self, source_path, date, sensor_name, force_reserialize=False, time_stamp_units="nanoseconds"):
+    def __init__(self, source_path, date, sensor_name, force_reserialize=False, time_stamp_units="nanoseconds", output_path=None):
         self.source_path = source_path
         self.date = date
         self.name = sensor_name
         self.path = os.path.join(self.source_path, self.date, self.name)
-        self.plaster_path = os.path.join(self.path, 'plaster.json')
+        if output_path:
+            self.plaster_path = os.path.join(output_path, date, sensor_name, 'plaster.json')
+        else:
+            self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.force_reserialize = force_reserialize
         self.sequences = []
         self.time_stamp_units = time_stamp_units
@@ -231,6 +234,7 @@ class Sensor:
             "sequences": sequences_list,
             "plaster_timestamp": datetime.now().isoformat()
         }
+        os.makedirs(os.path.dirname(plaster_path), exist_ok=True)
         with open(plaster_path, 'w') as json_file:
             json.dump(sensor_data, json_file, indent=4)
 
@@ -238,12 +242,16 @@ class Day:
     """
     A class representing a day of data captured by a BRICS rig.
     """
-    def __init__(self, date, source_path, force_reserialize=False, time_stamp_units="nanoseconds"):
+    def __init__(self, date, source_path, force_reserialize=False, time_stamp_units="nanoseconds", output_path=None):
         self.source_path = source_path
         self.date = date
         self.time_stamp_units = time_stamp_units
         self.path = os.path.join(source_path, date)
-        self.plaster_path = os.path.join(self.path, 'plaster.json')
+        self.output_path = output_path
+        if output_path:
+            self.plaster_path = os.path.join(output_path, date, 'plaster.json')
+        else:
+            self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.sensors = []
         self.multisequences = []
         self.force_reserialize = force_reserialize
@@ -281,7 +289,7 @@ class Day:
                     print(f"Failed to read plaster data for {self.date}: {e}")
                 return
 
-        self.sensors = [Sensor(self.source_path, self.date, sensor, force_reserialize=self.force_reserialize) for sensor in sensor_names]
+        self.sensors = [Sensor(self.source_path, self.date, sensor, force_reserialize=self.force_reserialize, output_path=self.output_path) for sensor in sensor_names]
         # Identify multi-sensor overlapping sequences for this day
         try:
             self.multisequences = self.identify_multi_sequence(self.sensors)
@@ -466,6 +474,7 @@ class Day:
             "multisequences": self.multisequences,
             "plaster_timestamp": datetime.now().isoformat()
         }, indent=4)
+        os.makedirs(os.path.dirname(plaster_path), exist_ok=True)
         with open(plaster_path, 'w') as json_file:
             json_file.write(json_obj)
 
@@ -473,12 +482,18 @@ class Source:
     """
     A class representing the source of data, usually captured by a single BRICS rig (e.g., BRICS Mini, BRICS Studio).
     """
-    def __init__(self, path, force_reserialize=False):
+    def __init__(self, path, force_reserialize=False, output_path=None, day=None):
         self.name = os.path.basename(os.path.normpath(path))
         self.path = path
         print(f"Initializing Source: {self.name} at {self.path}")
         self.days = []
-        self.plaster_path = os.path.join(self.path, 'plaster.json')
+        self.day = day
+        self.output_path = output_path
+        if output_path:
+            os.makedirs(output_path, exist_ok=True)
+            self.plaster_path = os.path.join(output_path, 'plaster.json')
+        else:
+            self.plaster_path = os.path.join(self.path, 'plaster.json')
         self.force_reserialize = force_reserialize
         self.duration = 0.0  # total duration across all days, in seconds
 
@@ -525,11 +540,13 @@ class Source:
         """
         Initializes the source by computing the days of data captured.
         """
-        date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+        date_pattern = re.compile(r'^\d{4}-\d{2}-\d{2}(-.+)?$')
         dir_days = [entry for entry in os.listdir(self.path)
                     if os.path.isdir(os.path.join(self.path, entry)) and date_pattern.match(entry)]
+        if self.day:
+            dir_days = [d for d in dir_days if d == self.day]
 
-        self.days = [Day(date, self.path, force_reserialize=self.force_reserialize, time_stamp_units=self.time_stamp_units) for date in dir_days]
+        self.days = [Day(date, self.path, force_reserialize=self.force_reserialize, time_stamp_units=self.time_stamp_units, output_path=self.output_path) for date in dir_days]
         self.duration = self.compute_total_duration()
         self.serialize(self.plaster_path)
 

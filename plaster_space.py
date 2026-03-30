@@ -2,13 +2,14 @@ import source
 import argparse
 from time_cache import TimeCache
 import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'primer'))
 import json
 import primer
 import shutil
 from datetime import datetime
 from calibration import calibrate_camera_from_primer
 import traceback
-import sys
 import pycolmap
 
 parser = argparse.ArgumentParser(description="Run Plaster with specified source.")
@@ -44,7 +45,8 @@ if __name__ == "__main__":
             exit(1)
         
     # First, cache the source directory and plaster.json
-    source_plaster_path = os.path.join(args.source, "plaster.json")
+    plaster_base = args.output if args.output else args.source
+    source_plaster_path = os.path.join(plaster_base, "plaster.json")
     if not os.path.exists(source_plaster_path):
         print(f"Plaster file not found: {source_plaster_path}")
         exit(1)
@@ -62,7 +64,7 @@ if __name__ == "__main__":
             double_force_reserialize = True
             print(f"Today's date ({today}) found in source plaster. Force reserialize is set to {double_force_reserialize}.")
             
-        day_plaster = json.load(open(os.path.join(args.source, day, "plaster.json"), 'r'))
+        day_plaster = json.load(open(os.path.join(plaster_base, day, "plaster.json"), 'r'))
         for ms in day_plaster["multisequences"]:
             if args.ms and ms["name"] != args.ms:
                 continue
@@ -80,7 +82,7 @@ if __name__ == "__main__":
 
             try:
                 print(f"Processing multisequence: {ms['name']}")
-                dataloader = primer.Primer(args.source, day, ms["name"])
+                dataloader = primer.Primer(args.source, day, ms["name"], plaster_base_path=plaster_base)
                 data = dataloader.get_overlapping(lookup_thresh_ms=args.time_thresh, wb_temp=args.wb_temp, is_harmonize=True)
 
                 frame_data = [

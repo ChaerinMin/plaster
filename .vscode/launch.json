@@ -29,6 +29,8 @@
             },
             "args":[
                 "-s", "/oscar/data/ssrinath/public/brics-mini",
+                "-o", "/oscar/data/ssrinath/public/brics-studio",
+                "-d", "2025-03-30",
             ]
         }
     ]
