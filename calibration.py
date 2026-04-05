@@ -154,6 +154,22 @@ def _write_images(frames: List[Dict[str, Any]], image_dir: str) -> List[Tuple[in
             written.append((frame_id, out_path))
     return written
 
+def _export_ply(reconstruction, ply_path: str) -> None:
+    """Export a pycolmap Reconstruction's point cloud to a PLY file."""
+    points = list(reconstruction.points3D.values())
+    with open(ply_path, 'w') as f:
+        f.write("ply\nformat ascii 1.0\n")
+        f.write(f"element vertex {len(points)}\n")
+        f.write("property float x\nproperty float y\nproperty float z\n")
+        f.write("property uchar red\nproperty uchar green\nproperty uchar blue\n")
+        f.write("end_header\n")
+        for p in points:
+            x, y, z = p.xyz
+            r, g, b = p.color
+            f.write(f"{x} {y} {z} {int(r)} {int(g)} {int(b)}\n")
+    print(f"Saved point cloud: {ply_path}")
+
+
 def calibrate_camera_from_primer(frames: Any,
                                  output_dir: str,
                                  args: argparse.Namespace,
@@ -246,6 +262,8 @@ def calibrate_camera_from_primer(frames: Any,
             stage3_image_dir = os.path.join(stage3_dir, "images")
             os.makedirs(stage3_image_dir, exist_ok=True)
 
+        _export_ply(best_recon, os.path.join(stage1_dir, "points3D.ply"))
+
         final_cam_params["stage1_model"] = str(stage1_camera_model)
         final_cam_params["stage1_camera_mode"] = str(stage1_camera_mode)
         for cam in best_recon.cameras.values():
@@ -324,6 +342,7 @@ def calibrate_camera_from_primer(frames: Any,
                 best_recon = recon
 
         best_recon.write(output_dir) # Write the best reconstruction to the top level directory
+        _export_ply(best_recon, os.path.join(output_dir, "points3D.ply"))
 
         # compute confidence
         image_scores = {}
